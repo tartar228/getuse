@@ -125,8 +125,12 @@ function walkTrends(m) {
 
 function makeLot(m, t) {
   const pid = pick(PLATFORM_ORDER);
+  // в ленте должно быть на что посмотреть: чаще выкладываем что-то выше «Обычного»
   let best = rollDrop(pid);
-  if (Math.random() < 0.6) {
+  if (Math.random() < 0.75) {
+    for (let k = 0; k < 8 && best.tier < 1; k++) best = rollDrop(pid);
+  }
+  if (Math.random() < 0.4) {
     for (let k = 0; k < 2; k++) {
       const d = rollDrop(pid);
       if (d.tier > best.tier) best = d;

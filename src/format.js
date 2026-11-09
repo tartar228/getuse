@@ -27,7 +27,7 @@ export const oneIn = (p) => (p > 0 ? `1 из ${fmt(1 / p)}` : 'не выпада
 
 // Множитель: ×12, ×1.5, ×0.3
 export function fmtMult(m) {
-  const v = m >= 10 ? Math.round(m) : m >= 1 ? +m.toFixed(1) : +m.toFixed(2);
+  const v = m >= 10 ? Math.round(m) : +m.toFixed(2);
   return `×${v}`;
 }
 
