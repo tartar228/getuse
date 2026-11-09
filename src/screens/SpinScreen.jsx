@@ -4,7 +4,7 @@ import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { sellValue, scrapValue } from '../game/economy.js';
-import { rub, rubAt } from '../format.js';
+import { rub, rubAt, fmtTime } from '../format.js';
 
 export default function SpinScreen({
   platform,
@@ -16,6 +16,12 @@ export default function SpinScreen({
   onShare,
   lifetime,
   onOdds,
+  spins,
+  nextIn,
+  coins,
+  buy1,
+  buy5,
+  onBuy,
 }) {
   const [skipKey, setSkipKey] = useState(0);
   const p = PLATFORMS[platform];
@@ -74,9 +80,26 @@ export default function SpinScreen({
       </div>
 
       {!current && (
-        <button className="btn primary big" onClick={onSpin}>
-          Крутить
-        </button>
+        <>
+          <button className="btn primary big" onClick={onSpin} disabled={spins <= 0}>
+            {spins > 0 ? `Крутить · осталось ${spins}` : 'Нет круток'}
+          </button>
+          {nextIn !== null && (
+            <div className="rules">
+              Следующая бесплатная крутка через {fmtTime(nextIn)}
+            </div>
+          )}
+          <div className="buy">
+            <button className="btn" onClick={() => onBuy(1)} disabled={coins < buy1}>
+              +1 крутка
+              <small>{rubAt(buy1)}</small>
+            </button>
+            <button className="btn" onClick={() => onBuy(5)} disabled={coins < buy5}>
+              +5 круток
+              <small>{rubAt(buy5)}</small>
+            </button>
+          </div>
+        </>
       )}
       {revealing && (
         <button className="btn big" onClick={() => setSkipKey((k) => k + 1)}>

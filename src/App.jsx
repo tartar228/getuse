@@ -5,6 +5,7 @@ import CollectionScreen, { DEFAULT_FILTER } from './screens/CollectionScreen.jsx
 import ItemScreen from './screens/ItemScreen.jsx';
 import ProfileScreen from './screens/ProfileScreen.jsx';
 import StubScreen from './screens/StubScreen.jsx';
+import TasksScreen from './screens/TasksScreen.jsx';
 import { rollDrop } from './game/generator.js';
 import { hydrate } from './game/appraise.js';
 import { initialState, reducer } from './state/game.js';
@@ -12,7 +13,10 @@ import { loadState, saveState, flushNow } from './state/persist.js';
 import { shareDrop } from './share.js';
 import { APP_TITLE } from './config.js';
 import { backButton, haptic, isTelegram } from './telegram.js';
-import { rub, fmtAt } from './format.js';
+import { rub, fmtAt, fmtTime } from './format.js';
+import { FREE_CAP, nextSpinIn, buyPrice } from './game/spins.js';
+import { claimableCount } from './game/tasks.js';
+import { bonusAvailable } from './game/daily.js';
 
 const TABS = [
   { id: 'spin', label: 'Крутить', icon: '🎰' },
@@ -32,13 +36,15 @@ export default function App() {
   const [filter, setFilter] = useState(DEFAULT_FILTER);
   // id дропа, анимация которого уже доиграла (или который восстановлен из сохранения)
   const [revealedId, setRevealedId] = useState(null);
+  // текущее время: обновляется раз в секунду для таймера и сброса дня
+  const [now, setNow] = useState(() => Date.now());
 
   // ---------- загрузка и сохранение ----------
   useEffect(() => {
     let alive = true;
     loadState().then((saved) => {
       if (!alive) return;
-      dispatch({ type: 'load', state: saved });
+      dispatch({ type: 'load', state: saved, now: Date.now() });
       if (saved?.pending) setRevealedId(saved.pending.id);
       setLoaded(true);
     });
@@ -50,6 +56,18 @@ export default function App() {
   useEffect(() => {
     if (loaded) saveState(state);
   }, [state, loaded]);
+
+  // тикер: докручивает крутки, следит за сменой дня. Когда игру сворачивали,
+  // таймеры браузера замирают, но при возврате первый же тик досчитает накопленное
+  useEffect(() => {
+    if (!loaded) return undefined;
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      dispatch({ type: 'tick', now: t });
+    }, 1000);
+    return () => clearInterval(id);
+  }, [loaded]);
 
   useEffect(() => {
     const onHide = () => document.visibilityState === 'hidden' && flushNow();
@@ -64,12 +82,14 @@ export default function App() {
   // ---------- производные данные ----------
   const items = useMemo(() => state.collection.map(hydrate), [state.collection]);
   const pendingDrop = useMemo(() => (state.pending ? hydrate(state.pending) : null), [state.pending]);
+  const badge = loaded ? claimableCount(state, items) + (bonusAvailable(state, now) ? 1 : 0) : 0;
+  const nextIn = nextSpinIn(state, now);
   const current = pendingDrop ? { drop: pendingDrop, revealed: revealedId === pendingDrop.id } : null;
 
   // ---------- действия ----------
   const spin = () => {
     if (state.pending) return;
-    dispatch({ type: 'spin', drop: rollDrop(platform) });
+    dispatch({ type: 'spin', drop: rollDrop(platform), now: Date.now() });
   };
 
   const onRevealed = useCallback(() => {
@@ -78,6 +98,21 @@ export default function App() {
     if (pendingDrop.tier >= 3) haptic.success();
     else haptic.thud();
   }, [state.pending, pendingDrop]);
+
+  const buySpins = (count) => {
+    haptic.select();
+    dispatch({ type: 'buySpins', count, now: Date.now() });
+  };
+
+  const claim = (id) => {
+    haptic.success();
+    dispatch({ type: 'claim', id, now: Date.now() });
+  };
+
+  const claimDaily = () => {
+    haptic.success();
+    dispatch({ type: 'claimDaily', now: Date.now() });
+  };
 
   const decide = (kind) => {
     if (!current?.revealed) return;
@@ -139,6 +174,12 @@ export default function App() {
         onShare={shareDrop}
         lifetime={state.lifetime}
         onOdds={() => setView('odds')}
+        spins={state.spins}
+        nextIn={nextIn}
+        coins={state.coins}
+        buy1={buyPrice(state, now, 1)}
+        buy5={buyPrice(state, now, 5)}
+        onBuy={buySpins}
       />
     );
   } else if (tab === 'collection') {
@@ -146,7 +187,9 @@ export default function App() {
   } else if (tab === 'market') {
     body = <StubScreen title="Биржа" stage={4} text="Лента лотов, свои объявления, офферы и новости рынка." />;
   } else if (tab === 'tasks') {
-    body = <StubScreen title="Задания" stage={3} text="Ежедневные и постоянные задания, достижения." />;
+    body = (
+      <TasksScreen state={state} items={items} now={now} onClaim={claim} onClaimDaily={claimDaily} />
+    );
   } else {
     body = (
       <ProfileScreen
@@ -172,7 +215,11 @@ export default function App() {
           <span title="Баланс">
             {rub(state.coins)} <small className="at">{fmtAt(state.coins)}</small>
           </span>
-          <span title="Крутки (на этапе 3 появится таймер)">🎟 ∞</span>
+          <span title="Крутки">
+            🎟 {state.spins}
+            {state.spins < FREE_CAP && <small className="timer">/{FREE_CAP}</small>}
+            {nextIn !== null && <small className="timer"> · {fmtTime(nextIn)}</small>}
+          </span>
         </div>
       </header>
 
@@ -187,6 +234,7 @@ export default function App() {
           >
             <span className="tab-icon">{t.icon}</span>
             <span className="tab-label">{t.label}</span>
+            {t.id === 'tasks' && badge > 0 && <span className="badge">{badge}</span>}
           </button>
         ))}
       </nav>

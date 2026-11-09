@@ -30,3 +30,9 @@ export function fmtMult(m) {
   const v = m >= 10 ? Math.round(m) : m >= 1 ? +m.toFixed(1) : +m.toFixed(2);
   return `×${v}`;
 }
+
+// 3:07
+export function fmtTime(ms) {
+  const total = Math.ceil(ms / 1000);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}

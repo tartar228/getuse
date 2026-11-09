@@ -1,14 +1,24 @@
 import { START_COINS, sellValue, scrapValue } from '../game/economy.js';
 import { TIERS } from '../game/value.js';
 import { hydrate, toRaw } from '../game/appraise.js';
+import { FREE_CAP, START_SPINS, refill, buyPrice, recentBuys } from '../game/spins.js';
+import { dayKey, touchVisit, bonusAvailable, rewardForStreak } from '../game/daily.js';
+import { emptyDaily, rollTasks, findDef, isClaimable } from '../game/tasks.js';
 
 // Всё состояние игры. Сохраняется целиком (см. persist.js).
 // collection и pending хранят «сырые» юзы {id, name, platform, ts}.
 export const initialState = () => ({
   coins: START_COINS,
+  spins: START_SPINS,
+  spinsAt: 0, // с какого момента копится следующая бесплатная крутка (0 — ещё не стартовало)
+  buyCount: 0, // сколько круток куплено недавно (для роста цены)
+  buyAt: 0,
   collection: [],
   pending: null, // выпавший юз, по которому ещё не принято решение
-  lifetime: { spins: 0, tiers: TIERS.map(() => 0) },
+  lifetime: { spins: 0, tiers: TIERS.map(() => 0), marketSales: 0 },
+  daily: { visitDay: '', streak: 0, bonusDay: '' },
+  tasks: emptyDaily(),
+  claimed: {}, // полученные награды постоянных заданий и достижений
   savedAt: 0,
 });
 
@@ -22,24 +32,53 @@ export function normalize(saved) {
     lifetime: {
       spins: saved.lifetime?.spins ?? 0,
       tiers: TIERS.map((_, i) => saved.lifetime?.tiers?.[i] ?? 0),
+      marketSales: saved.lifetime?.marketSales ?? 0,
     },
+    daily: { ...base.daily, ...saved.daily },
+    tasks: { ...base.tasks, ...saved.tasks, claimed: { ...saved.tasks?.claimed } },
+    claimed: { ...saved.claimed },
     collection: Array.isArray(saved.collection) ? saved.collection.filter((c) => c.platform) : [],
   };
+}
+
+// Всё, что зависит от времени: накопление круток, смена дня, стрик.
+// Возвращает тот же объект, если ничего не изменилось.
+export function advance(state, now) {
+  return touchVisit(rollTasks(refill(state, now), now), now);
+}
+
+function applyReward(state, r) {
+  return { ...state, coins: state.coins + (r.coins || 0), spins: state.spins + (r.spins || 0) };
 }
 
 export function reducer(state, action) {
   switch (action.type) {
     case 'load':
-      return normalize(action.state);
+      return advance(normalize(action.state), action.now);
+
+    // раз в секунду: докручиваем таймер, следим за сменой дня
+    case 'tick':
+      return advance(state, action.now);
 
     case 'spin': {
+      const s = advance(state, action.now);
+      if (s.pending || s.spins <= 0) return s;
       const d = action.drop;
       return {
-        ...state,
+        ...s,
+        spins: s.spins - 1,
+        // если запас был полон, таймер следующей крутки стартует с этого момента
+        spinsAt: s.spins >= FREE_CAP ? action.now : s.spinsAt,
         pending: toRaw(d),
         lifetime: {
-          spins: state.lifetime.spins + 1,
-          tiers: state.lifetime.tiers.map((n, i) => (i === d.tier ? n + 1 : n)),
+          ...s.lifetime,
+          spins: s.lifetime.spins + 1,
+          tiers: s.lifetime.tiers.map((n, i) => (i === d.tier ? n + 1 : n)),
+        },
+        tasks: {
+          ...s.tasks,
+          spins: s.tasks.spins + 1,
+          platforms: s.tasks.platforms.includes(d.platform) ? s.tasks.platforms : [...s.tasks.platforms, d.platform],
         },
       };
     }
@@ -66,6 +105,39 @@ export function reducer(state, action) {
         coins: state.coins + gain,
         collection: state.collection.filter((c) => c.id !== action.id),
       };
+    }
+
+    case 'buySpins': {
+      const s = advance(state, action.now);
+      const price = buyPrice(s, action.now, action.count);
+      if (s.coins < price) return s;
+      return {
+        ...s,
+        coins: s.coins - price,
+        spins: s.spins + action.count,
+        buyCount: recentBuys(s, action.now) + action.count,
+        buyAt: action.now,
+      };
+    }
+
+    case 'claimDaily': {
+      const s = advance(state, action.now);
+      if (!bonusAvailable(s, action.now)) return s;
+      const r = rewardForStreak(s.daily.streak);
+      return applyReward({ ...s, daily: { ...s.daily, bonusDay: dayKey(action.now) } }, r);
+    }
+
+    // награда за задание или достижение
+    case 'claim': {
+      const s = advance(state, action.now);
+      const def = findDef(action.id);
+      if (!def) return s;
+      const items = s.collection.map(hydrate);
+      if (!isClaimable(def, s, items)) return s;
+      const next = applyReward(s, def.reward);
+      return action.id.startsWith('d_')
+        ? { ...next, tasks: { ...next.tasks, claimed: { ...next.tasks.claimed, [action.id]: true } } }
+        : { ...next, claimed: { ...next.claimed, [action.id]: true } };
     }
 
     default:

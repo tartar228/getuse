@@ -522,3 +522,132 @@ button {
 .stat-row:first-of-type {
   border-top: 0;
 }
+
+/* ---------- крутки и покупка (этап 3) ---------- */
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.buy {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.buy .btn {
+  font-size: 14px;
+  padding: 10px 6px;
+}
+.tab {
+  position: relative;
+}
+.badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 20px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #e53935;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.balance .timer {
+  color: var(--hint);
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* ---------- задания ---------- */
+.seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 3px;
+}
+.seg button {
+  padding: 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: var(--hint);
+}
+.seg button.active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.streak-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 8px 0;
+}
+.streak-day {
+  padding: 6px 0;
+  border-radius: 8px;
+  background: var(--bg2);
+  text-align: center;
+  font-size: 11px;
+  color: var(--hint);
+}
+.streak-day b {
+  display: block;
+  font-size: 13px;
+  color: var(--text);
+}
+.streak-day.done {
+  background: color-mix(in srgb, #43a047 25%, transparent);
+}
+.streak-day.today {
+  outline: 2px solid var(--accent);
+}
+.task {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+.task:first-of-type {
+  border-top: 0;
+}
+.task-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+.task-title {
+  font-weight: 600;
+}
+.task-reward {
+  color: var(--hint);
+  font-size: 12.5px;
+}
+.bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg2);
+  margin-top: 6px;
+  overflow: hidden;
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.task.done .bar > i {
+  background: #43a047;
+}
+.claim {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.claimed {
+  color: #43a047;
+  font-weight: 700;
+}
