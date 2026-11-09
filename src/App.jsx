@@ -4,8 +4,11 @@ import OddsScreen from './screens/OddsScreen.jsx';
 import CollectionScreen, { DEFAULT_FILTER } from './screens/CollectionScreen.jsx';
 import ItemScreen from './screens/ItemScreen.jsx';
 import ProfileScreen from './screens/ProfileScreen.jsx';
-import StubScreen from './screens/StubScreen.jsx';
 import TasksScreen from './screens/TasksScreen.jsx';
+import ExchangeScreen from './screens/ExchangeScreen.jsx';
+import LotScreen from './screens/LotScreen.jsx';
+import ListScreen from './screens/ListScreen.jsx';
+import SummaryModal from './components/SummaryModal.jsx';
 import { rollDrop } from './game/generator.js';
 import { hydrate } from './game/appraise.js';
 import { initialState, reducer } from './state/game.js';
@@ -36,6 +39,8 @@ export default function App() {
   const [filter, setFilter] = useState(DEFAULT_FILTER);
   // id дропа, анимация которого уже доиграла (или который восстановлен из сохранения)
   const [revealedId, setRevealedId] = useState(null);
+  const [exPart, setExPart] = useState('feed'); // раздел биржи
+  const [exFilter, setExFilter] = useState('all'); // платформа в ленте лотов
   // текущее время: обновляется раз в секунду для таймера и сброса дня
   const [now, setNow] = useState(() => Date.now());
 
@@ -114,6 +119,27 @@ export default function App() {
     dispatch({ type: 'claimDaily', now: Date.now() });
   };
 
+  const market = state.market;
+
+  const listItem = (id, ask) => {
+    haptic.success();
+    dispatch({ type: 'listItem', id, ask, now: Date.now() });
+    setView(null);
+    setExPart('mine');
+    setTab('market');
+  };
+
+  const buyLot = (id) => {
+    haptic.success();
+    dispatch({ type: 'buyLot', id, now: Date.now() });
+    setView(null);
+  };
+
+  const exAction = (type) => (id) => {
+    haptic.select();
+    dispatch({ type, id, now: Date.now() });
+  };
+
   const decide = (kind) => {
     if (!current?.revealed) return;
     haptic.select();
@@ -153,6 +179,26 @@ export default function App() {
     body = <div className="screen"><p className="note">Загрузка…</p></div>;
   } else if (view === 'odds') {
     body = <OddsScreen platform={platform} />;
+  } else if (view?.lot) {
+    const lot = market?.lots.find((l) => l.id === view.lot);
+    body = (
+      <LotScreen
+        lot={lot}
+        drop={lot ? hydrate({ id: lot.id, name: lot.name, platform: lot.platform, ts: lot.ts }) : null}
+        market={market}
+        coins={state.coins}
+        onBuy={() => buyLot(view.lot)}
+      />
+    );
+  } else if (view?.list) {
+    body = (
+      <ListScreen
+        key={view.list}
+        drop={items.find((d) => d.id === view.list)}
+        market={market}
+        onList={(ask) => listItem(view.list, ask)}
+      />
+    );
   } else if (view?.item) {
     body = (
       <ItemScreen
@@ -160,6 +206,7 @@ export default function App() {
         onSell={() => itemAction('sellItem', view.item)}
         onScrap={() => itemAction('scrapItem', view.item)}
         onShare={shareDrop}
+        onList={() => setView({ list: view.item })}
       />
     );
   } else if (tab === 'spin') {
@@ -185,7 +232,21 @@ export default function App() {
   } else if (tab === 'collection') {
     body = <CollectionScreen items={items} filter={filter} onFilter={setFilter} onOpen={openItem} />;
   } else if (tab === 'market') {
-    body = <StubScreen title="Биржа" stage={4} text="Лента лотов, свои объявления, офферы и новости рынка." />;
+    body = (
+      <ExchangeScreen
+        market={market}
+        now={now}
+        part={exPart}
+        onPart={setExPart}
+        filter={exFilter}
+        onFilter={setExFilter}
+        onOpenLot={(id) => setView({ lot: id })}
+        onUnlist={exAction('unlist')}
+        onAccept={exAction('acceptOffer')}
+        onDecline={exAction('declineOffer')}
+        onGoCollection={() => openTab('collection')}
+      />
+    );
   } else if (tab === 'tasks') {
     body = (
       <TasksScreen state={state} items={items} now={now} onClaim={claim} onClaimDaily={claimDaily} />
@@ -225,6 +286,10 @@ export default function App() {
 
       <main className="content">{body}</main>
 
+      {loaded && market?.summary && (
+        <SummaryModal summary={market.summary} onClose={() => dispatch({ type: 'dismissSummary' })} />
+      )}
+
       <nav className="tabbar">
         {TABS.map((t) => (
           <button
@@ -235,6 +300,9 @@ export default function App() {
             <span className="tab-icon">{t.icon}</span>
             <span className="tab-label">{t.label}</span>
             {t.id === 'tasks' && badge > 0 && <span className="badge">{badge}</span>}
+            {t.id === 'market' && market && market.offers.length > 0 && (
+              <span className="badge">{market.offers.length}</span>
+            )}
           </button>
         ))}
       </nav>

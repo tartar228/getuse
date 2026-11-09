@@ -36,3 +36,19 @@ export function fmtTime(ms) {
   const total = Math.ceil(ms / 1000);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
 }
+
+// 45 мин · 2 ч 10 мин · 1 д 4 ч
+export function fmtDuration(ms) {
+  const min = Math.max(1, Math.round(ms / 60000));
+  if (min < 60) return `${min} мин`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return min % 60 ? `${h} ч ${min % 60} мин` : `${h} ч`;
+  const d = Math.floor(h / 24);
+  return h % 24 ? `${d} д ${h % 24} ч` : `${d} д`;
+}
+
+// +12% / −5%
+export function fmtDelta(ratio) {
+  const v = Math.round((ratio - 1) * 100);
+  return `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}%`;
+}

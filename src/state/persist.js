@@ -4,33 +4,66 @@ import { PLATFORM_ORDER } from '../game/platforms.js';
 // Сохранение: Telegram CloudStorage (основное) + localStorage (запасной вариант и кеш).
 // При загрузке берётся более свежая копия по savedAt.
 //
-// В CloudStorage значение ограничено 4096 символами, поэтому коллекция режется на куски:
-//   meta       — всё состояние, кроме коллекции, + число кусков
-//   inv0..invN — по CHUNK юзов в виде [id, name, индекс платформы, ts]
+// В CloudStorage значение ограничено 4096 символами, поэтому состояние режется на ключи:
+//   meta       — всё, кроме коллекции и рынка, + число кусков каждого вида
+//   inv0..invN — коллекция, по INV_CHUNK юзов в виде [id, name, индекс платформы, ts]
+//   mk0..mkN   — состояние биржи (JSON), нарезанное по MK_CHUNK символов
 // Индекс платформы — позиция в PLATFORM_ORDER, порядок менять нельзя.
 
 const LS_KEY = 'getuse_state_v1';
-const CHUNK = 60;
+const INV_CHUNK = 60;
+const MK_CHUNK = 3500;
 const FLUSH_DELAY = 1000;
 
 const pack = (c) => [c.id, c.name, PLATFORM_ORDER.indexOf(c.platform), c.ts];
 const unpack = ([id, name, pi, ts]) => ({ id, name, platform: PLATFORM_ORDER[pi], ts });
 
+// Состояние → набор ключей {имя: строка}
 function split(state) {
-  const { collection, ...rest } = state;
-  const chunks = [];
-  for (let i = 0; i < collection.length; i += CHUNK) {
-    chunks.push(JSON.stringify(collection.slice(i, i + CHUNK).map(pack)));
+  const { collection, market, ...rest } = state;
+  const keys = {};
+  let inv = 0;
+  for (let i = 0; i < collection.length; i += INV_CHUNK) {
+    keys[`inv${inv++}`] = JSON.stringify(collection.slice(i, i + INV_CHUNK).map(pack));
   }
-  return { meta: { ...rest, chunks: chunks.length }, chunks };
+  let mk = 0;
+  if (market) {
+    const str = JSON.stringify(market);
+    for (let i = 0; i < str.length; i += MK_CHUNK) keys[`mk${mk++}`] = str.slice(i, i + MK_CHUNK);
+  }
+  keys.meta = JSON.stringify({ ...rest, inv, mk });
+  return keys;
 }
+
+// Набор ключей → состояние
+function join(keys) {
+  if (!keys.meta) return null;
+  const { inv, mk, ...rest } = JSON.parse(keys.meta);
+  let collection = [];
+  for (let i = 0; i < inv; i++) collection = collection.concat(JSON.parse(keys[`inv${i}`] || '[]').map(unpack));
+  let market = null;
+  if (mk) {
+    let str = '';
+    for (let i = 0; i < mk; i++) str += keys[`mk${i}`] || '';
+    try {
+      market = JSON.parse(str);
+    } catch {
+      market = null; // рынок будет создан заново
+    }
+  }
+  return { ...rest, collection, market };
+}
+
+const keyNames = (meta) => [
+  ...Array.from({ length: meta.inv }, (_, i) => `inv${i}`),
+  ...Array.from({ length: meta.mk }, (_, i) => `mk${i}`),
+];
 
 // ---------- localStorage ----------
 
 function localSave(state) {
   try {
-    const { meta, chunks } = split(state);
-    localStorage.setItem(LS_KEY, JSON.stringify({ meta, chunks }));
+    localStorage.setItem(LS_KEY, JSON.stringify(split(state)));
   } catch {
     /* приватный режим или переполнение — не критично */
   }
@@ -39,10 +72,7 @@ function localSave(state) {
 function localLoad() {
   try {
     const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return null;
-    const { meta, chunks } = JSON.parse(raw);
-    const { chunks: _n, ...rest } = meta;
-    return { ...rest, collection: chunks.flatMap((c) => JSON.parse(c).map(unpack)) };
+    return raw ? join(JSON.parse(raw)) : null;
   } catch {
     return null;
   }
@@ -50,15 +80,15 @@ function localLoad() {
 
 // ---------- CloudStorage ----------
 
+let cloudKeys = new Set(); // какие ключи лежат в облаке (для чистки лишних)
+
 async function cloudLoad() {
   const got = await cloud.getItems(['meta']);
   if (!got.meta) return null;
-  const { chunks: n, ...rest } = JSON.parse(got.meta);
-  const keys = Array.from({ length: n }, (_, i) => `inv${i}`);
-  const items = keys.length ? await cloud.getItems(keys) : {};
-  const collection = keys.flatMap((k) => JSON.parse(items[k] || '[]').map(unpack));
-  writtenChunks = n; // чтобы потом убрать лишние куски, если коллекция уменьшится
-  return { ...rest, collection };
+  const names = keyNames(JSON.parse(got.meta));
+  const rest = names.length ? await cloud.getItems(names) : {};
+  cloudKeys = new Set(['meta', ...names]);
+  return join({ meta: got.meta, ...rest });
 }
 
 export async function loadState() {
@@ -78,8 +108,7 @@ export async function loadState() {
 let timer = null;
 let inflight = false;
 let queued = null;
-const written = new Map(); // key -> последнее записанное значение
-let writtenChunks = null; // сколько кусков лежит в облаке (null — не знаем)
+const written = new Map(); // ключ -> последнее записанное значение
 
 async function flush() {
   if (!cloud.available || inflight || !queued) return;
@@ -87,26 +116,24 @@ async function flush() {
   const state = queued;
   queued = null;
   try {
-    const { meta, chunks } = split(state);
-    // сначала куски, потом meta: meta никогда не указывает на ненаписанные куски
-    for (let i = 0; i < chunks.length; i++) {
-      if (written.get(`inv${i}`) !== chunks[i]) {
-        await cloud.setItem(`inv${i}`, chunks[i]);
-        written.set(`inv${i}`, chunks[i]);
+    const keys = split(state);
+    // meta пишем последней: она никогда не указывает на ненаписанные куски
+    const order = Object.keys(keys).filter((k) => k !== 'meta').concat('meta');
+    for (const k of order) {
+      if (written.get(k) !== keys[k]) {
+        await cloud.setItem(k, keys[k]);
+        written.set(k, keys[k]);
+        cloudKeys.add(k);
       }
     }
-    const metaStr = JSON.stringify(meta);
-    if (written.get('meta') !== metaStr) {
-      await cloud.setItem('meta', metaStr);
-      written.set('meta', metaStr);
-    }
-    if (writtenChunks !== null && writtenChunks > chunks.length) {
-      const stale = [];
-      for (let i = chunks.length; i < writtenChunks; i++) stale.push(`inv${i}`);
+    const stale = [...cloudKeys].filter((k) => !(k in keys));
+    if (stale.length) {
       await cloud.removeItems(stale);
-      stale.forEach((k) => written.delete(k));
+      stale.forEach((k) => {
+        cloudKeys.delete(k);
+        written.delete(k);
+      });
     }
-    writtenChunks = chunks.length;
   } catch {
     // не вышло — попробуем со следующим сохранением; локальная копия уже есть
     if (!queued) queued = state;

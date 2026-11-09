@@ -5,7 +5,7 @@ import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { rub, rubAt } from '../format.js';
 
 // Карточка юза из коллекции
-export default function ItemScreen({ drop, onSell, onScrap, onShare }) {
+export default function ItemScreen({ drop, onSell, onScrap, onShare, onList }) {
   if (!drop) return <div className="screen"><p className="note">Этого юза уже нет в коллекции.</p></div>;
   const tier = TIERS[drop.tier];
   return (
@@ -32,10 +32,13 @@ export default function ItemScreen({ drop, onSell, onScrap, onShare }) {
           <small>+{rub(scrapValue(drop))}</small>
         </button>
       </div>
+      <button className="btn primary" onClick={onList}>
+        Выставить на биржу
+        <small>продать дороже, чем «сразу»</small>
+      </button>
       <button className="link" onClick={() => onShare(drop)}>
         Поделиться дропом
       </button>
-      <p className="note">Выставить на биржу по своей цене можно будет на этапе 4.</p>
     </div>
   );
 }

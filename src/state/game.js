@@ -4,6 +4,7 @@ import { hydrate, toRaw } from '../game/appraise.js';
 import { FREE_CAP, START_SPINS, refill, buyPrice, recentBuys } from '../game/spins.js';
 import { dayKey, touchVisit, bonusAvailable, rewardForStreak } from '../game/daily.js';
 import { emptyDaily, rollTasks, findDef, isClaimable } from '../game/tasks.js';
+import { advanceMarket, marketInfo } from '../game/market.js';
 
 // Всё состояние игры. Сохраняется целиком (см. persist.js).
 // collection и pending хранят «сырые» юзы {id, name, platform, ts}.
@@ -19,6 +20,7 @@ export const initialState = () => ({
   daily: { visitDay: '', streak: 0, bonusDay: '' },
   tasks: emptyDaily(),
   claimed: {}, // полученные награды постоянных заданий и достижений
+  market: null, // состояние биржи, создаётся при первом заходе (см. game/market.js)
   savedAt: 0,
 });
 
@@ -37,6 +39,7 @@ export function normalize(saved) {
     daily: { ...base.daily, ...saved.daily },
     tasks: { ...base.tasks, ...saved.tasks, claimed: { ...saved.tasks?.claimed } },
     claimed: { ...saved.claimed },
+    market: saved.market && saved.market.trends && saved.market.lots ? saved.market : null,
     collection: Array.isArray(saved.collection) ? saved.collection.filter((c) => c.platform) : [],
   };
 }
@@ -44,7 +47,7 @@ export function normalize(saved) {
 // Всё, что зависит от времени: накопление круток, смена дня, стрик.
 // Возвращает тот же объект, если ничего не изменилось.
 export function advance(state, now) {
-  return touchVisit(rollTasks(refill(state, now), now), now);
+  return advanceMarket(touchVisit(rollTasks(refill(state, now), now), now), now);
 }
 
 function applyReward(state, r) {
@@ -139,6 +142,85 @@ export function reducer(state, action) {
         ? { ...next, tasks: { ...next.tasks, claimed: { ...next.tasks.claimed, [action.id]: true } } }
         : { ...next, claimed: { ...next.claimed, [action.id]: true } };
     }
+
+    // ---------- биржа ----------
+
+    // выставить юз из коллекции на биржу по своей цене
+    case 'listItem': {
+      const s = advance(state, action.now);
+      const item = s.collection.find((c) => c.id === action.id);
+      const ask = Math.round(action.ask);
+      if (!item || !s.market || !(ask >= 1)) return s;
+      const d = hydrate(item);
+      const info = marketInfo(d);
+      const listing = {
+        id: d.id,
+        name: d.name,
+        platform: d.platform,
+        tier: d.tier,
+        base: d.price,
+        cat: info.cat || undefined,
+        ask: Math.min(ask, 1e9),
+        ts: item.ts,
+        at: action.now,
+      };
+      return {
+        ...s,
+        collection: s.collection.filter((c) => c.id !== action.id),
+        market: { ...s.market, listings: [listing, ...s.market.listings] },
+      };
+    }
+
+    // снять свой лот, юз возвращается в коллекцию
+    case 'unlist': {
+      const l = state.market?.listings.find((x) => x.id === action.id);
+      if (!l) return state;
+      return {
+        ...state,
+        collection: [{ id: l.id, name: l.name, platform: l.platform, ts: l.ts }, ...state.collection],
+        market: { ...state.market, listings: state.market.listings.filter((x) => x.id !== action.id) },
+      };
+    }
+
+    // купить лот NPC-продавца
+    case 'buyLot': {
+      const s = advance(state, action.now);
+      const lot = s.market?.lots.find((l) => l.id === action.id);
+      if (!lot || s.coins < lot.ask) return s;
+      return {
+        ...s,
+        coins: s.coins - lot.ask,
+        collection: [{ id: lot.id, name: lot.name, platform: lot.platform, ts: action.now }, ...s.collection],
+        market: { ...s.market, lots: s.market.lots.filter((l) => l.id !== lot.id) },
+      };
+    }
+
+    case 'acceptOffer': {
+      const s = advance(state, action.now);
+      const o = s.market?.offers.find((x) => x.id === action.id);
+      if (!o || !s.collection.some((c) => c.id === o.itemId)) return s;
+      const sat = { ...s.market.sat, [o.platform]: Math.min(0.4, (s.market.sat[o.platform] || 0) + 0.03) };
+      return {
+        ...s,
+        coins: s.coins + o.price,
+        collection: s.collection.filter((c) => c.id !== o.itemId),
+        lifetime: { ...s.lifetime, marketSales: s.lifetime.marketSales + 1 },
+        tasks: { ...s.tasks, marketSales: s.tasks.marketSales + 1 },
+        market: {
+          ...s.market,
+          sat,
+          offers: s.market.offers.filter((x) => x.itemId !== o.itemId),
+        },
+      };
+    }
+
+    case 'declineOffer':
+      if (!state.market) return state;
+      return { ...state, market: { ...state.market, offers: state.market.offers.filter((x) => x.id !== action.id) } };
+
+    case 'dismissSummary':
+      if (!state.market?.summary) return state;
+      return { ...state, market: { ...state.market, summary: null } };
 
     default:
       return state;
