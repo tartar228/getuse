@@ -1,0 +1,73 @@
+// Платформы и правила юзернеймов (примерно как в реальности).
+// priceMult — базовый множитель цены на бирже.
+// seps — разделители, которые разрешены платформой.
+
+export const PLATFORMS = {
+  telegram: {
+    id: 'telegram',
+    name: 'Telegram',
+    icon: '✈️',
+    prefix: '@',
+    priceMult: 1.25,
+    minLen: 3,
+    maxLen: 32,
+    seps: ['_'],
+    digitFirst: false,
+    rules: ['Латиница, цифры, _', 'Начинается с буквы', 'Короче 5 символов — коллекционные'],
+    validate: (s) => /^[a-z][a-z0-9_]{2,31}$/.test(s),
+  },
+  tiktok: {
+    id: 'tiktok',
+    name: 'TikTok',
+    icon: '🎵',
+    prefix: '@',
+    priceMult: 1.0,
+    minLen: 2,
+    maxLen: 24,
+    seps: ['.', '_'],
+    digitFirst: true,
+    rules: ['Латиница, цифры, точки, _', 'До 24 символов', 'Не может заканчиваться точкой'],
+    validate: (s) => /^[a-z0-9._]{2,24}$/.test(s) && !s.endsWith('.'),
+  },
+  instagram: {
+    id: 'instagram',
+    name: 'Instagram',
+    icon: '📷',
+    prefix: '@',
+    priceMult: 1.15,
+    minLen: 2,
+    maxLen: 30,
+    seps: ['.', '_'],
+    digitFirst: true,
+    rules: ['Латиница, цифры, точки, _', 'До 30 символов', 'Две точки подряд нельзя'],
+    validate: (s) => /^[a-z0-9._]{1,30}$/.test(s) && !s.includes('..'),
+  },
+  x: {
+    id: 'x',
+    name: 'X (Twitter)',
+    icon: '𝕏',
+    prefix: '@',
+    priceMult: 1.1,
+    minLen: 4,
+    maxLen: 15,
+    seps: ['_'],
+    digitFirst: true,
+    rules: ['Латиница, цифры, _', 'От 4 до 15 символов'],
+    validate: (s) => /^[a-z0-9_]{4,15}$/.test(s),
+  },
+  youtube: {
+    id: 'youtube',
+    name: 'YouTube',
+    icon: '▶️',
+    prefix: '@',
+    priceMult: 0.9,
+    minLen: 3,
+    maxLen: 30,
+    seps: ['_', '-', '.'],
+    digitFirst: true,
+    rules: ['@handle: латиница, цифры, _, -, точки', 'От 3 до 30 символов'],
+    validate: (s) => /^[a-z0-9._-]{3,30}$/.test(s),
+  },
+};
+
+export const PLATFORM_ORDER = ['telegram', 'tiktok', 'instagram', 'x', 'youtube'];
