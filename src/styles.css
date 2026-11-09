@@ -419,3 +419,106 @@ button {
   font-weight: 500;
   font-size: 12px;
 }
+
+/* ---------- коллекция (этап 2) ---------- */
+.summary {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  text-align: center;
+}
+.summary-num {
+  font-size: 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.summary-lbl {
+  color: var(--hint);
+  font-size: 12px;
+}
+.sorts {
+  display: flex;
+  gap: 6px;
+}
+.sort {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--hint);
+  font-size: 13px;
+}
+.sort.active {
+  color: var(--accent);
+  font-weight: 600;
+}
+.coll-row {
+  width: 100%;
+  text-align: left;
+}
+.actions.two {
+  grid-template-columns: 1fr 1fr;
+}
+.item-name {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 700;
+  font-size: 26px;
+  word-break: break-all;
+  text-align: center;
+}
+.item-platform {
+  color: var(--hint);
+}
+
+/* ---------- профиль ---------- */
+.showcase {
+  display: grid;
+  gap: 8px;
+}
+.show-card {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  grid-template-areas: 'place name price' 'place meta price';
+  align-items: center;
+  column-gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--bg);
+  border-left: 5px solid var(--tier);
+}
+.show-place {
+  grid-area: place;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--hint);
+  text-align: center;
+}
+.show-name {
+  grid-area: name;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 700;
+  word-break: break-all;
+}
+.show-meta {
+  grid-area: meta;
+  color: var(--hint);
+  font-size: 12.5px;
+}
+.show-price {
+  grid-area: price;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
+}
+.stat-row:first-of-type {
+  border-top: 0;
+}

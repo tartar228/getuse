@@ -7,18 +7,25 @@ const rnd = () => SCRAMBLE[Math.floor(Math.random() * SCRAMBLE.length)];
 // Символы раскрываются по очереди слева направо, как барабаны слот-машины.
 // У дорогих тиров последние символы раскрываются медленнее — интрига.
 // skipKey: при смене значения раскрытие мгновенно завершается.
-export default function SlotReveal({ name, tier, skipKey, onDone }) {
-  const [locked, setLocked] = useState(0);
+export default function SlotReveal({ name, tier, skipKey, onDone, instant = false }) {
+  const [locked, setLocked] = useState(instant ? name.length : 0);
   const [scramble, setScramble] = useState(() => [...name].map(rnd));
   const lockedRef = useRef(0);
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
   const finishRef = useRef(null);
+  // дроп уже раскрыт (например, восстановлен из сохранения) — анимацию не играем
+  const startInstant = useRef(instant).current;
 
   useEffect(() => {
     const len = name.length;
     let cancelled = false;
     let timer;
+    if (startInstant) {
+      lockedRef.current = len;
+      setLocked(len);
+      return undefined;
+    }
     lockedRef.current = 0;
     setLocked(0);
 
@@ -61,7 +68,7 @@ export default function SlotReveal({ name, tier, skipKey, onDone }) {
       clearTimeout(timer);
       clearInterval(spinner);
     };
-  }, [name, tier]);
+  }, [name, tier, startInstant]);
 
   const prevSkip = useRef(skipKey);
   useEffect(() => {

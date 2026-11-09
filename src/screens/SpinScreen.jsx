@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import SlotReveal from '../components/SlotReveal.jsx';
+import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { sellValue, scrapValue } from '../game/economy.js';
-import { rub, rubAt, fmtMult } from '../format.js';
+import { rub, rubAt } from '../format.js';
 
 export default function SpinScreen({
   platform,
@@ -12,7 +13,8 @@ export default function SpinScreen({
   onSpin,
   onRevealed,
   onDecide,
-  stats,
+  onShare,
+  lifetime,
   onOdds,
 }) {
   const [skipKey, setSkipKey] = useState(0);
@@ -52,6 +54,7 @@ export default function SpinScreen({
             key={drop.id}
             name={drop.name}
             tier={drop.tier}
+            instant={decided}
             skipKey={skipKey}
             onDone={onRevealed}
           />
@@ -65,18 +68,7 @@ export default function SpinScreen({
               {tier.name}
             </div>
             <div className="price">≈ {rubAt(drop.price)}</div>
-            <div className="calc">
-              <div className="calc-row">
-                <span>База за длину ({drop.breakdown.len} симв.)</span>
-                <span>{rub(drop.breakdown.base)}</span>
-              </div>
-              {drop.breakdown.rows.map((r) => (
-                <div className="calc-row" key={r.label}>
-                  <span>{r.label}</span>
-                  <span className={r.mult >= 1 ? 'mult up' : 'mult down'}>{fmtMult(r.mult)}</span>
-                </div>
-              ))}
-            </div>
+            <PriceBreakdown breakdown={drop.breakdown} />
           </div>
         )}
       </div>
@@ -92,19 +84,24 @@ export default function SpinScreen({
         </button>
       )}
       {decided && (
-        <div className="actions">
-          <button className="btn primary" onClick={() => onDecide('keep')}>
-            В коллекцию
+        <>
+          <div className="actions">
+            <button className="btn primary" onClick={() => onDecide('keep')}>
+              В коллекцию
+            </button>
+            <button className="btn" onClick={() => onDecide('sell')}>
+              Продать сразу
+              <small>+{rub(sellValue(drop))}</small>
+            </button>
+            <button className="btn" onClick={() => onDecide('scrap')}>
+              Разобрать
+              <small>+{rub(scrapValue(drop))}</small>
+            </button>
+          </div>
+          <button className="link" onClick={() => onShare(drop)}>
+            Поделиться дропом
           </button>
-          <button className="btn" onClick={() => onDecide('sell')}>
-            Продать сразу
-            <small>+{rub(sellValue(drop))}</small>
-          </button>
-          <button className="btn" onClick={() => onDecide('scrap')}>
-            Разобрать
-            <small>+{rub(scrapValue(drop))}</small>
-          </button>
-        </div>
+        </>
       )}
 
       <button className="link" onClick={onOdds}>
@@ -112,12 +109,12 @@ export default function SpinScreen({
       </button>
 
       <div className="session">
-        <div className="session-title">Крутки за сессию: {stats.spins}</div>
+        <div className="session-title">Всего круток: {lifetime.spins}</div>
         <div className="session-tiers">
           {TIERS.map((t, i) => (
             <div className="session-tier" key={t.id} title={t.name}>
               <span className="dot" style={{ background: t.color }} />
-              {stats.tiers[i]}
+              {lifetime.tiers[i]}
             </div>
           ))}
         </div>

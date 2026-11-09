@@ -1,8 +1,7 @@
 import { pick, pickWeighted, randInt } from './rng.js';
 import { BUCKETS } from './words.js';
 import { PLATFORMS } from './platforms.js';
-import { analyze } from './analyze.js';
-import { valuate } from './value.js';
+import { appraise } from './appraise.js';
 
 // Шансы пулов. Мусор выпадает чаще всего.
 export const POOL_WEIGHTS = [
@@ -238,18 +237,12 @@ export function rollDrop(platformId, rng = Math.random) {
   const p = PLATFORMS[platformId];
   const wanted = pickWeighted(rng, POOL_WEIGHTS);
   const { name, pool } = generateName(rng, p, wanted);
-  const a = analyze(name);
-  const v = valuate(a, p);
   return {
     id: `${Date.now().toString(36)}${(counter++).toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
     name,
     platform: platformId,
     pool,
-    tier: v.tier,
-    price: v.price,
-    v0: v.v0,
-    tags: v.tags,
-    breakdown: v.breakdown,
     ts: Date.now(),
+    ...appraise(name, platformId),
   };
 }

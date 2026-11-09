@@ -55,3 +55,25 @@ export const haptic = {
   success: () => hf?.notificationOccurred('success'),
   warn: () => hf?.notificationOccurred('warning'),
 };
+
+// ---------- облачное хранилище ----------
+const cs = atLeast('6.9') ? tg?.CloudStorage : undefined;
+
+const withTimeout = (promise, ms = 6000) =>
+  Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('cloud timeout')), ms))]);
+
+export const cloud = {
+  available: Boolean(cs && isTelegram),
+  getItems: (keys) =>
+    withTimeout(new Promise((res, rej) => cs.getItems(keys, (e, v) => (e ? rej(e) : res(v))))),
+  setItem: (key, value) =>
+    withTimeout(new Promise((res, rej) => cs.setItem(key, value, (e, ok) => (e ? rej(e) : res(ok))))),
+  removeItems: (keys) =>
+    withTimeout(new Promise((res, rej) => cs.removeItems(keys, (e, ok) => (e ? rej(e) : res(ok))))),
+};
+
+// ---------- ссылки и шаринг ----------
+export function openTelegramLink(url) {
+  if (tg?.openTelegramLink) tg.openTelegramLink(url);
+  else window.open(url, '_blank');
+}

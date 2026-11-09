@@ -1,11 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useState } from 'react';
 import SpinScreen from './screens/SpinScreen.jsx';
 import OddsScreen from './screens/OddsScreen.jsx';
-import CollectionScreen from './screens/CollectionScreen.jsx';
+import CollectionScreen, { DEFAULT_FILTER } from './screens/CollectionScreen.jsx';
+import ItemScreen from './screens/ItemScreen.jsx';
+import ProfileScreen from './screens/ProfileScreen.jsx';
 import StubScreen from './screens/StubScreen.jsx';
 import { rollDrop } from './game/generator.js';
-import { TIERS } from './game/value.js';
-import { START_COINS, sellValue, scrapValue } from './game/economy.js';
+import { hydrate } from './game/appraise.js';
+import { initialState, reducer } from './state/game.js';
+import { loadState, saveState, flushNow } from './state/persist.js';
+import { shareDrop } from './share.js';
 import { APP_TITLE } from './config.js';
 import { backButton, haptic, isTelegram } from './telegram.js';
 import { rub, fmtAt } from './format.js';
@@ -18,43 +22,73 @@ const TABS = [
   { id: 'profile', label: 'Профиль', icon: '👤' },
 ];
 
-const emptyStats = () => ({ spins: 0, tiers: TIERS.map(() => 0) });
-
 export default function App() {
+  const [state, dispatch] = useReducer(reducer, undefined, initialState);
+  const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState('spin');
-  const [view, setView] = useState(null); // подэкран поверх вкладки, например 'odds'
+  // подэкран поверх вкладки: 'odds' или { item: id }
+  const [view, setView] = useState(null);
   const [platform, setPlatform] = useState('telegram');
-  const [coins, setCoins] = useState(START_COINS);
-  const [collection, setCollection] = useState([]);
-  const [stats, setStats] = useState(emptyStats);
-  // дроп, по которому игрок ещё не принял решение. Живёт в App, чтобы не потеряться
-  // при переключении вкладок
-  const [current, setCurrent] = useState(null);
+  const [filter, setFilter] = useState(DEFAULT_FILTER);
+  // id дропа, анимация которого уже доиграла (или который восстановлен из сохранения)
+  const [revealedId, setRevealedId] = useState(null);
 
+  // ---------- загрузка и сохранение ----------
+  useEffect(() => {
+    let alive = true;
+    loadState().then((saved) => {
+      if (!alive) return;
+      dispatch({ type: 'load', state: saved });
+      if (saved?.pending) setRevealedId(saved.pending.id);
+      setLoaded(true);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loaded) saveState(state);
+  }, [state, loaded]);
+
+  useEffect(() => {
+    const onHide = () => document.visibilityState === 'hidden' && flushNow();
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', flushNow);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', flushNow);
+    };
+  }, []);
+
+  // ---------- производные данные ----------
+  const items = useMemo(() => state.collection.map(hydrate), [state.collection]);
+  const pendingDrop = useMemo(() => (state.pending ? hydrate(state.pending) : null), [state.pending]);
+  const current = pendingDrop ? { drop: pendingDrop, revealed: revealedId === pendingDrop.id } : null;
+
+  // ---------- действия ----------
   const spin = () => {
-    if (current) return;
-    const drop = rollDrop(platform);
-    setCurrent({ drop, revealed: false });
-    setStats((s) => ({
-      spins: s.spins + 1,
-      tiers: s.tiers.map((n, i) => (i === drop.tier ? n + 1 : n)),
-    }));
+    if (state.pending) return;
+    dispatch({ type: 'spin', drop: rollDrop(platform) });
   };
 
   const onRevealed = useCallback(() => {
-    setCurrent((c) => (c && !c.revealed ? { ...c, revealed: true } : c));
-    if (current?.drop.tier >= 3) haptic.success();
+    if (!state.pending) return;
+    setRevealedId(state.pending.id);
+    if (pendingDrop.tier >= 3) haptic.success();
     else haptic.thud();
-  }, [current?.drop.tier]);
+  }, [state.pending, pendingDrop]);
 
   const decide = (kind) => {
     if (!current?.revealed) return;
-    const d = current.drop;
-    if (kind === 'keep') setCollection((c) => [d, ...c]);
-    if (kind === 'sell') setCoins((c) => c + sellValue(d));
-    if (kind === 'scrap') setCoins((c) => c + scrapValue(d));
     haptic.select();
-    setCurrent(null);
+    dispatch({ type: 'decide', kind });
+  };
+
+  const itemAction = (type, id) => {
+    haptic.select();
+    dispatch({ type, id });
+    setView(null);
   };
 
   // ---------- навигация и кнопка «Назад» ----------
@@ -77,9 +111,22 @@ export default function App() {
     setTab(id);
   };
 
+  const openItem = (id) => setView({ item: id });
+
   let body;
-  if (view === 'odds') {
+  if (!loaded) {
+    body = <div className="screen"><p className="note">Загрузка…</p></div>;
+  } else if (view === 'odds') {
     body = <OddsScreen platform={platform} />;
+  } else if (view?.item) {
+    body = (
+      <ItemScreen
+        drop={items.find((d) => d.id === view.item)}
+        onSell={() => itemAction('sellItem', view.item)}
+        onScrap={() => itemAction('scrapItem', view.item)}
+        onShare={shareDrop}
+      />
+    );
   } else if (tab === 'spin') {
     body = (
       <SpinScreen
@@ -89,18 +136,27 @@ export default function App() {
         onSpin={spin}
         onRevealed={onRevealed}
         onDecide={decide}
-        stats={stats}
+        onShare={shareDrop}
+        lifetime={state.lifetime}
         onOdds={() => setView('odds')}
       />
     );
   } else if (tab === 'collection') {
-    body = <CollectionScreen collection={collection} />;
+    body = <CollectionScreen items={items} filter={filter} onFilter={setFilter} onOpen={openItem} />;
   } else if (tab === 'market') {
     body = <StubScreen title="Биржа" stage={4} text="Лента лотов, свои объявления, офферы и новости рынка." />;
   } else if (tab === 'tasks') {
     body = <StubScreen title="Задания" stage={3} text="Ежедневные и постоянные задания, достижения." />;
   } else {
-    body = <StubScreen title="Профиль" stage={2} text="Витрина лучших юзов и стоимость коллекции." />;
+    body = (
+      <ProfileScreen
+        items={items}
+        coins={state.coins}
+        lifetime={state.lifetime}
+        onOpen={openItem}
+        onShare={shareDrop}
+      />
+    );
   }
 
   return (
@@ -113,8 +169,10 @@ export default function App() {
         )}
         <div className="title">{APP_TITLE}</div>
         <div className="balance">
-          <span title="Баланс">{rub(coins)} <small className="at">{fmtAt(coins)}</small></span>
-          <span title="Крутки (на этапе 1 без лимита)">🎟 ∞</span>
+          <span title="Баланс">
+            {rub(state.coins)} <small className="at">{fmtAt(state.coins)}</small>
+          </span>
+          <span title="Крутки (на этапе 3 появится таймер)">🎟 ∞</span>
         </div>
       </header>
 
