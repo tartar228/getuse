@@ -2,8 +2,8 @@ import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { fairPrice, saleChance, currentIndex, FEE } from '../game/market.js';
 import Sparkline from '../components/Sparkline.jsx';
-import { rubAt, rub, fmtDelta, fmtDuration } from '../format.js';
-import PlatformMark from '../components/PlatformMark.jsx';
+import Icon from '../components/Icon.jsx';
+import { fmtAt, fmtDelta, fmtDuration, fmtThin } from '../format.js';
 
 const PARTS = [
   { id: 'feed', label: 'Лента' },
@@ -14,6 +14,7 @@ const PARTS = [
 ];
 
 const infoOf = (l) => ({ platform: l.platform, tier: l.tier, base: l.base, cat: l.cat || null, short: l.name.length <= 4 });
+const shortName = (id) => PLATFORMS[id].name.replace(' (Twitter)', '');
 
 // Как быстро продастся лот: по средней задержке покупателя
 export function speedLabel(ask, fair, tier) {
@@ -23,39 +24,60 @@ export function speedLabel(ask, fair, tier) {
   return `${text} (≈ ${fmtDuration(mean * 60000)})`;
 }
 
+// Цена в ₽ с эквивалентом в @ в скобках, под ней дополнительная строка
+function PriceCell({ value, extra }) {
+  return (
+    <span className="crow-price">
+      {fmtThin(value)} ₽<small>({fmtAt(value)})</small>
+      {extra}
+    </span>
+  );
+}
+
+function NickLine({ tier, platform, name }) {
+  return (
+    <>
+      <span className="rtier" style={{ color: TIERS[tier].color }}>
+        <span className="rdot" style={{ background: TIERS[tier].color }} />
+        {TIERS[tier].name}
+      </span>
+      <span className="rnick">
+        <Icon name={platform} size={14} />@{name}
+      </span>
+    </>
+  );
+}
+
 function Feed({ m, filter, onFilter, onOpenLot }) {
   const lots = m.lots.filter((l) => filter === 'all' || l.platform === filter);
   return (
     <>
-      <div className="chips">
-        <button className={filter === 'all' ? 'chip active' : 'chip'} onClick={() => onFilter('all')}>
+      <div className="seg-row scroll">
+        <button className={filter === 'all' ? 'seg-pill active' : 'seg-pill'} onClick={() => onFilter('all')}>
           Все
         </button>
         {PLATFORM_ORDER.map((id) => (
-          <button key={id} className={filter === id ? 'chip active' : 'chip'} onClick={() => onFilter(id)}>
-            <PlatformMark id={id} /> {PLATFORMS[id].name}
+          <button key={id} className={filter === id ? 'seg-pill active' : 'seg-pill'} onClick={() => onFilter(id)}>
+            {shortName(id)}
           </button>
         ))}
       </div>
       {lots.length === 0 ? (
         <p className="note">Сейчас лотов этой платформы нет, загляни позже.</p>
       ) : (
-        <div className="card">
+        <div className="plain-list">
           {lots.map((l) => {
             const ratio = l.ask / fairPrice(m, infoOf(l));
             return (
-              <button className="coll-row lot" key={l.id} onClick={() => onOpenLot(l.id)}>
-                <span className="dot" style={{ background: TIERS[l.tier].color }} />
-                <span className="lot-main">
-                  <span className="coll-name">@{l.name}</span>
-                  <span className="lot-seller">
-                    <PlatformMark id={l.platform} /> {l.seller}
-                  </span>
+              <button className="crow lot" key={l.id} onClick={() => onOpenLot(l.id)}>
+                <span className="crow-main">
+                  <NickLine tier={l.tier} platform={l.platform} name={l.name} />
+                  <span className="lot-seller">{l.seller}</span>
                 </span>
-                <span className="lot-price">
-                  {rub(l.ask)}
-                  <span className={ratio <= 1 ? 'mult up' : 'mult down'}>{fmtDelta(ratio)} к рынку</span>
-                </span>
+                <PriceCell
+                  value={l.ask}
+                  extra={<em className={ratio <= 1 ? 'delta up' : 'delta down'}>{fmtDelta(ratio)} к рынку</em>}
+                />
               </button>
             );
           })}
@@ -69,31 +91,27 @@ function Mine({ m, now, free, onUnlist, onGoCollection }) {
   return (
     <>
       <p className="note">
-        Чтобы выставить юз, открой его в коллекции и нажми «Выставить на биржу». Комиссия биржи: {Math.round(FEE * 100)}%.
+        Чтобы выставить юз, открой его в коллекции и нажми «На биржу». Комиссия биржи: {Math.round(FEE * 100)}%.
       </p>
-      <button className="link" onClick={onGoCollection}>
-        Открыть коллекцию →
+      <button className="link left" onClick={onGoCollection}>
+        Открыть коллекцию
       </button>
       {m.listings.length === 0 ? (
         <p className="note">У тебя нет активных лотов.</p>
       ) : (
-        <div className="card">
+        <div className="plain-list">
           {m.listings.map((l) => {
             const fair = fairPrice(m, infoOf(l));
             return (
-              <div className="coll-row" key={l.id}>
-                <span className="dot" style={{ background: TIERS[l.tier].color }} />
-                <span className="lot-main">
-                  <span className="coll-name">@{l.name}</span>
+              <div className="crow" key={l.id}>
+                <span className="crow-main">
+                  <NickLine tier={l.tier} platform={l.platform} name={l.name} />
                   <span className="lot-seller">
-                    <PlatformMark id={l.platform} /> на бирже {fmtDuration(now - (l.at || now))} · {speedLabel(l.ask, fair, l.tier)}
+                    на бирже {fmtDuration(now - (l.at || now))} · {speedLabel(l.ask, fair, l.tier)}
                   </span>
                 </span>
-                <span className="lot-price">
-                  {rub(l.ask)}
-                  <span className="lot-seller">рынок {rub(fair)}</span>
-                </span>
-                <button className="claim" disabled={free <= 0} onClick={() => onUnlist(l.id)}>
+                <PriceCell value={l.ask} extra={<em className="delta">рынок {fmtThin(fair)} ₽</em>} />
+                <button className="mini-btn" disabled={free <= 0} onClick={() => onUnlist(l.id)}>
                   {free > 0 ? 'Снять' : 'Нет мест'}
                 </button>
               </div>
@@ -102,17 +120,19 @@ function Mine({ m, now, free, onUnlist, onGoCollection }) {
         </div>
       )}
       {m.log.length > 0 && (
-        <div className="card">
-          <div className="card-title">Недавние продажи</div>
-          {m.log.slice(0, 8).map((x, i) => (
-            <div className="stat-row" key={i}>
-              <span>
-                <PlatformMark id={x.platform} /> @{x.name} → {x.buyer}
-              </span>
-              <b>+{rub(x.price)}</b>
-            </div>
-          ))}
-        </div>
+        <section>
+          <div className="overline">Недавние продажи</div>
+          <div className="plain-list">
+            {m.log.slice(0, 8).map((x, i) => (
+              <div className="stat-row" key={i}>
+                <span>
+                  <Icon name={x.platform} size={14} /> @{x.name} → {x.buyer}
+                </span>
+                <b>+{fmtThin(x.price)} ₽</b>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
     </>
   );
@@ -120,23 +140,28 @@ function Mine({ m, now, free, onUnlist, onGoCollection }) {
 
 function Offers({ m, now, onAccept, onDecline }) {
   if (!m.offers.length) {
-    return <p className="note">Пока предложений нет. Покупатели присылают офферы на юзы из твоей коллекции — чем дороже юз, тем чаще.</p>;
+    return <p className="note">Пока предложений нет. Покупатели присылают офферы на юзы из твоей коллекции: чем дороже юз, тем чаще.</p>;
   }
   return (
-    <div className="card">
+    <div className="plain-list">
       {m.offers.map((o) => (
-        <div className="task" key={o.id}>
-          <div className="task-title">
-            За @{o.name} <PlatformMark id={o.platform} /> предлагают {rubAt(o.price)}
+        <div className="offer" key={o.id}>
+          <div className="offer-top">
+            <span className="rnick">
+              <Icon name={o.platform} size={14} />@{o.name}
+            </span>
+            <span className="crow-price">
+              {fmtThin(o.price)} ₽<small>({fmtAt(o.price)})</small>
+            </span>
           </div>
-          <div className="task-reward">
+          <div className="lot-seller">
             {o.buyer} · действует ещё {fmtDuration(o.until - now)}
           </div>
-          <div className="actions two" style={{ marginTop: 8 }}>
-            <button className="btn primary" onClick={() => onAccept(o.id)}>
+          <div className="offer-act">
+            <button className="mini-btn white" onClick={() => onAccept(o.id)}>
               Принять
             </button>
-            <button className="btn" onClick={() => onDecline(o.id)}>
+            <button className="mini-btn" onClick={() => onDecline(o.id)}>
               Отклонить
             </button>
           </div>
@@ -149,37 +174,41 @@ function Offers({ m, now, onAccept, onDecline }) {
 function News({ m, now }) {
   return (
     <>
-      <div className="card">
-        <div className="card-title">Сейчас на рынке</div>
+      <section>
+        <div className="overline">Сейчас на рынке</div>
         {m.events.length === 0 ? (
           <p className="note">Рынок спокоен, особых событий нет.</p>
         ) : (
-          m.events.map((e) => (
-            <div className="stat-row" key={e.id}>
-              <span>{e.text}</span>
-              <b className={e.mult >= 1 ? 'mult up' : 'mult down'}>ещё {fmtDuration(e.until - now)}</b>
-            </div>
-          ))
+          <div className="plain-list">
+            {m.events.map((e) => (
+              <div className="stat-row" key={e.id}>
+                <span>{e.text}</span>
+                <b className={e.mult >= 1 ? 'mult up' : 'mult down'}>ещё {fmtDuration(e.until - now)}</b>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
-      <div className="card">
-        <div className="card-title">Лента новостей</div>
+      </section>
+      <section>
+        <div className="overline">Лента новостей</div>
         {m.news.length === 0 ? (
           <p className="note">Новостей пока нет.</p>
         ) : (
-          m.news.map((n) => (
-            <div className="stat-row" key={n.id}>
-              <span>{n.text}</span>
-              <span className="lot-seller">{fmtDuration(now - n.t)} назад</span>
-            </div>
-          ))
+          <div className="plain-list">
+            {m.news.map((n) => (
+              <div className="stat-row" key={n.id}>
+                <span>{n.text}</span>
+                <span className="lot-seller">{fmtDuration(now - n.t)} назад</span>
+              </div>
+            ))}
+          </div>
         )}
-      </div>
+      </section>
     </>
   );
 }
 
-function IndexRow({ label, dot, values, now }) {
+function IndexRow({ label, dot, values }) {
   const cur = values[values.length - 1];
   const prev = values[Math.max(0, values.length - 7)];
   const diff = cur - prev;
@@ -201,27 +230,26 @@ function Prices({ m }) {
   return (
     <>
       <p className="note">Индекс цены: 100 — норма. График за последние ~12 часов, изменение — за последний час.</p>
-      <div className="card">
-        <div className="card-title">По платформам</div>
-        {PLATFORM_ORDER.map((p) => (
-          <IndexRow
-            key={p}
-            label={`${PLATFORMS[p].icon} ${PLATFORMS[p].name}`}
-            values={[...(m.hist.p[p] || []).slice(0, -1), currentIndex.platform(m, p)]}
-          />
-        ))}
-      </div>
-      <div className="card">
-        <div className="card-title">По редкости</div>
-        {TIERS.map((t, i) => (
-          <IndexRow
-            key={t.id}
-            label={t.name}
-            dot={t.color}
-            values={[...(m.hist.t[i] || []).slice(0, -1), currentIndex.tier(m, i)]}
-          />
-        ))}
-      </div>
+      <section>
+        <div className="overline">По платформам</div>
+        <div className="plain-list">
+          {PLATFORM_ORDER.map((p) => (
+            <IndexRow
+              key={p}
+              label={shortName(p)}
+              values={[...(m.hist.p[p] || []).slice(0, -1), currentIndex.platform(m, p)]}
+            />
+          ))}
+        </div>
+      </section>
+      <section>
+        <div className="overline">По редкости</div>
+        <div className="plain-list">
+          {TIERS.map((t, i) => (
+            <IndexRow key={t.id} label={t.name} dot={t.color} values={[...(m.hist.t[i] || []).slice(0, -1), currentIndex.tier(m, i)]} />
+          ))}
+        </div>
+      </section>
     </>
   );
 }
@@ -242,10 +270,13 @@ export default function ExchangeScreen({
 }) {
   if (!market) return <div className="screen"><p className="note">Биржа открывается…</p></div>;
   return (
-    <div className="screen">
-      <div className="chips">
+    <div className="screen ex">
+      <div className="titlebar">
+        <h1 className="display">Биржа</h1>
+      </div>
+      <div className="seg-row scroll">
         {PARTS.map((p) => (
-          <button key={p.id} className={part === p.id ? 'chip active' : 'chip'} onClick={() => onPart(p.id)}>
+          <button key={p.id} className={part === p.id ? 'seg-pill active' : 'seg-pill'} onClick={() => onPart(p.id)}>
             {p.label}
             {p.id === 'offers' && market.offers.length > 0 && <span className="pill">{market.offers.length}</span>}
             {p.id === 'mine' && market.listings.length > 0 && <span className="pill">{market.listings.length}</span>}

@@ -1,7 +1,7 @@
-import { START_COINS, sellValue, scrapValue } from '../game/economy.js';
+import { START_COINS, SPIN_COST, sellValue, scrapValue } from '../game/economy.js';
 import { TIERS } from '../game/value.js';
 import { hydrate, toRaw } from '../game/appraise.js';
-import { START_SPINS, refill, buyPrice, recentBuys, capOf } from '../game/spins.js';
+import { refill } from '../game/spins.js';
 import { dayKey, touchVisit, bonusAvailable, rewardForStreak } from '../game/daily.js';
 import { emptyDaily, rollTasks, findDef, isClaimable } from '../game/tasks.js';
 import { advanceMarket, marketInfo, normalizeMarket } from '../game/market.js';
@@ -23,11 +23,8 @@ import { withoutTalisman } from '../game/talismans.js';
 // Всё состояние игры. Сохраняется целиком (см. persist.js).
 // collection и pending хранят «сырые» юзы {id, name, platform, ts, no}.
 export const initialState = () => ({
-  coins: START_COINS,
-  spins: START_SPINS,
-  spinsAt: 0, // с какого момента копится следующая бесплатная крутка (0 — ещё не стартовало)
-  buyCount: 0, // сколько круток куплено недавно (для роста цены)
-  buyAt: 0,
+  coins: START_COINS, // ₽; крутим за @ с баланса (1 @ = SPIN_COST ₽)
+  spinsAt: 0, // с какого момента копится следующая @ подзарядки (0: таймер стоит)
   collection: [],
   pending: null, // выпавшие юзы (до 5 за раз), по которым ещё не принято решение
   lifetime: { spins: 0, tiers: TIERS.map(() => 0), marketSales: 0 },
@@ -57,15 +54,20 @@ export function normalize(saved, now = Date.now()) {
   const base = initialState();
   if (!saved) return base;
   const xp = Math.max(0, Number(saved.xp) || 0);
+  // старые сохранения: отдельные крутки (spins) превращаем в деньги по 25 ₽ за штуку
+  const { spins: legacySpins, buyCount, buyAt, ...rest } = saved;
+  void buyCount;
+  void buyAt;
+  const legacyCoins = Math.max(0, Math.floor(Number(legacySpins) || 0)) * SPIN_COST;
   const collection = Array.isArray(saved.collection) ? saved.collection.filter((c) => c.platform) : [];
   // старое сохранение (до слотов): места выдаём под всю накопленную коллекцию и ещё 4 сверху
   const grandfathered = Math.max(0, Math.ceil((collection.length + 4 - BASE_SLOTS) / SLOT_PACK));
   return {
     ...base,
-    ...saved,
+    ...rest,
+    coins: (Number(saved.coins) || 0) + legacyCoins,
     // часы телефона могли уйти назад: отметки времени из будущего не копим
     spinsAt: Math.min(saved.spinsAt || 0, now),
-    buyAt: Math.min(saved.buyAt || 0, now),
     lifetime: {
       spins: saved.lifetime?.spins ?? 0,
       tiers: TIERS.map((_, i) => saved.lifetime?.tiers?.[i] ?? 0),
@@ -95,7 +97,8 @@ const withoutOffers = (market, itemId) =>
   (market ? { ...market, offers: market.offers.filter((o) => o.itemId !== itemId) } : market);
 
 function applyReward(state, r) {
-  return { ...state, coins: state.coins + (r.coins || 0), spins: state.spins + (r.spins || 0) };
+  // spins в наградах это @: переводим в ₽
+  return { ...state, coins: state.coins + (r.coins || 0) + (r.spins || 0) * SPIN_COST };
 }
 
 // Начисляем опыт и сразу выдаём награды за новые уровни
@@ -128,7 +131,8 @@ export function reducer(state, action) {
       const s = advance(state, action.now);
       const drops = action.drops || [];
       const n = drops.length;
-      if (s.pending || n < 1 || n > MAX_BATCH || s.spins < n) return s;
+      const cost = n * SPIN_COST;
+      if (s.pending || n < 1 || n > MAX_BATCH || s.coins < cost) return s;
       const tiers = [...s.lifetime.tiers];
       const platforms = [...s.tasks.platforms];
       let xp = 0;
@@ -140,9 +144,7 @@ export function reducer(state, action) {
       return addXp(
         {
           ...s,
-          spins: s.spins - n,
-          // если запас был полон, таймер следующей крутки стартует с этого момента
-          spinsAt: s.spins >= capOf(s) ? action.now : s.spinsAt,
+          coins: s.coins - cost,
           pending: drops.map((d, i) => toRaw({ ...d, no: s.lifetime.spins + i + 1 })),
           lifetime: { ...s.lifetime, spins: s.lifetime.spins + n, tiers },
           tasks: { ...s.tasks, spins: s.tasks.spins + n, platforms },
@@ -184,19 +186,6 @@ export function reducer(state, action) {
       const d = hydrate(item);
       const gain = action.type === 'sellItem' ? sellValue(d) : scrapValue(d);
       return { ...removeItem(state, action.id), coins: state.coins + gain };
-    }
-
-    case 'buySpins': {
-      const s = advance(state, action.now);
-      const price = buyPrice(s, action.now, action.count);
-      if (s.coins < price) return s;
-      return {
-        ...s,
-        coins: s.coins - price,
-        spins: s.spins + action.count,
-        buyCount: recentBuys(s, action.now) + action.count,
-        buyAt: action.now,
-      };
     }
 
     // купить пару мест в коллекции

@@ -17,7 +17,7 @@
       },
       "avgPrice": 198,
       "avgLen": 8.22,
-      "evInstant": 26.6
+      "evInstant": 25.1
     },
     "tiktok": {
       "tiers": [
@@ -35,7 +35,7 @@
       },
       "avgPrice": 126,
       "avgLen": 8.22,
-      "evInstant": 21.8
+      "evInstant": 20.6
     },
     "instagram": {
       "tiers": [
@@ -53,7 +53,7 @@
       },
       "avgPrice": 145,
       "avgLen": 8.21,
-      "evInstant": 21.7
+      "evInstant": 20.6
     },
     "x": {
       "tiers": [
@@ -71,7 +71,7 @@
       },
       "avgPrice": 149,
       "avgLen": 8.24,
-      "evInstant": 23.2
+      "evInstant": 22
     },
     "youtube": {
       "tiers": [
@@ -89,7 +89,7 @@
       },
       "avgPrice": 108,
       "avgLen": 8.22,
-      "evInstant": 20.9
+      "evInstant": 19.8
     }
   }
 }

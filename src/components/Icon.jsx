@@ -96,6 +96,21 @@ const PATHS = {
       <rect x="14" y="14" width="7" height="7" rx="1.6" />
     </>
   ),
+  qr: (
+    <>
+      <rect x="3" y="3" width="7" height="7" rx="1" />
+      <rect x="14" y="3" width="7" height="7" rx="1" />
+      <rect x="3" y="14" width="7" height="7" rx="1" />
+      <path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v1" />
+    </>
+  ),
+  verified: (
+    <>
+      <circle cx="12" cy="12" r="10" fill="currentColor" stroke="none" />
+      <path d="m7.5 12.5 3 3 6-6.5" stroke="#fff" strokeWidth="2.4" />
+    </>
+  ),
+  plus: <path d="M12 6v12M6 12h12" strokeWidth="3" />,
   backspace: (
     <>
       <path d="M21 5H9l-6 7 6 7h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1Z" />

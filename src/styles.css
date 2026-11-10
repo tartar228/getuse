@@ -97,11 +97,16 @@
   padding: max(10px, calc(var(--safe-top) + 4px)) var(--s4) var(--s2);
 }
 .hbal {
+  display: flex;
   flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
+  text-align: left;
 }
 .hbal-coins {
   display: block;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -112,27 +117,11 @@
   color: var(--text-2);
   font-weight: 500;
 }
-.hbal-spins {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-  gap: 4px;
-  min-height: 32px;
-  padding: 0 10px 0 8px;
-  border-radius: var(--r-pill);
-  background: var(--surface-2);
-  color: var(--energy);
-  font-size: 14px;
-  font-weight: 700;
-}
-.hbal-spins small {
-  color: var(--text-2);
-  font-weight: 500;
-}
 .hbal-luck {
   margin-top: 2px;
   font-size: 11px;
   color: var(--text-2);
+  white-space: nowrap;
 }
 /* полный экран: баланс стоит по центру в полосе Telegram (там же его кнопки «Закрыть» и меню) */
 .tg-strip .topbar {
@@ -143,22 +132,23 @@
   top: calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px));
   left: 50%;
   z-index: 2;
-  display: flex;
   flex: none;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: min(220px, calc(100vw - 200px));
+  width: min(230px, calc(100vw - 190px));
   height: var(--tg-content-safe-area-inset-top, 44px);
   text-align: center;
   transform: translateX(-50%);
 }
 .tg-strip .hbal-coins {
-  max-width: 100%;
   font-size: 16px;
 }
-.tg-strip .hbal-spins {
-  margin-right: auto;
+.tg-strip .hicons {
+  margin-left: auto;
+}
+.at-sign {
+  font-weight: 800;
+  color: var(--energy);
 }
 .hicons {
   display: flex;
@@ -448,7 +438,7 @@
   font-size: 14px;
   font-weight: 700;
 }
-.chip-in .icon {
+.chip-in .at-sign {
   color: #b8860b;
 }
 .act {
@@ -579,6 +569,9 @@
   font-size: 13px;
   font-weight: 500;
   transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.spin-main .seg-pill {
+  padding: 0 9px;
 }
 .seg-pill.active {
   background: #fff;
@@ -778,6 +771,152 @@
   vertical-align: -0.12em;
   background: currentColor;
   animation: blink 1s steps(1) infinite;
+}
+
+/* оформление под соцсети: размер у всех одинаковый, меняются цвета, аватар и значки */
+.acard-deco {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  color: var(--text-3);
+}
+.vbadge {
+  display: inline-flex;
+  margin-left: 6px;
+  vertical-align: -0.1em;
+  color: #1d9bf0;
+}
+.vbadge.gold {
+  color: #e8b923;
+}
+.nick {
+  white-space: nowrap;
+}
+
+/* Telegram: тёмная тема клиента, ник синей ссылкой, аватар с голубым градиентом */
+.acard[data-p='telegram'] {
+  background: linear-gradient(160deg, #1e2d3d, #17212b 70%);
+  border-color: #263646;
+}
+.acard[data-p='telegram'] .av {
+  border: 0;
+  background: linear-gradient(135deg, #6ec6f7, #3a8fd6);
+  color: #fff;
+}
+.acard[data-p='telegram'] .nick {
+  color: #6ab3f3;
+}
+.acard[data-p='telegram'] .acard-sub {
+  color: #7a8da0;
+}
+.acard[data-p='telegram'] .acard-foot {
+  border-top-color: #263646;
+}
+.acard[data-p='telegram'] .vbadge {
+  color: #6ab3f3;
+}
+
+/* TikTok: чёрный фон, аватар с красно-голубой «глитч»-обводкой и красным плюсом */
+.acard[data-p='tiktok'] {
+  background: #121212;
+  border-color: #2b2b2b;
+}
+.acard[data-p='tiktok'] .av {
+  position: relative;
+  border: 0;
+  background: #1f1f1f;
+  color: #fff;
+  box-shadow: -2.5px 0 0 #25f4ee, 2.5px 0 0 #fe2c55;
+}
+.acard[data-p='tiktok'] .av-plus {
+  position: absolute;
+  left: 50%;
+  bottom: -7px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin-left: -10px;
+  border-radius: 50%;
+  background: #fe2c55;
+  color: #fff;
+}
+.acard[data-p='tiktok'] .nick {
+  color: #fff;
+}
+.acard[data-p='tiktok'] .acard-sub {
+  color: #8a8b91;
+}
+.acard[data-p='tiktok'] .acard-foot {
+  border-top-color: #2b2b2b;
+}
+
+/* Instagram: чисто чёрный, аватар в кольце истории, ник полужирным */
+.acard[data-p='instagram'] {
+  background: #000;
+  border-color: #262626;
+}
+.acard[data-p='instagram'] .av {
+  border: 3px solid transparent;
+  background:
+    linear-gradient(#000, #000) padding-box,
+    conic-gradient(#feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #feda75) border-box;
+  color: #fff;
+}
+.acard[data-p='instagram'] .nick {
+  color: #fff;
+  font-weight: 600;
+}
+.acard[data-p='instagram'] .acard-sub {
+  color: #a8a8a8;
+}
+.acard[data-p='instagram'] .acard-foot {
+  border-top-color: #262626;
+}
+
+/* X: чёрный, тонкие рамки, жирный ник и синяя галочка (у мифика золотая) */
+.acard[data-p='x'] {
+  background: #000;
+  border-color: #2f3336;
+  border-radius: 18px;
+}
+.acard[data-p='x'] .av {
+  border: 1px solid #2f3336;
+  background: #16181c;
+  color: #e7e9ea;
+}
+.acard[data-p='x'] .nick {
+  color: #e7e9ea;
+  font-weight: 800;
+}
+.acard[data-p='x'] .acard-sub {
+  color: #71767b;
+}
+.acard[data-p='x'] .acard-foot {
+  border-top-color: #2f3336;
+}
+
+/* YouTube: тёмная тема сайта, аватар канала с красным градиентом */
+.acard[data-p='youtube'] {
+  background: #0f0f0f;
+  border-color: #272727;
+}
+.acard[data-p='youtube'] .av {
+  border: 0;
+  background: linear-gradient(135deg, #ff5a4f, #c4160e);
+  color: #fff;
+}
+.acard[data-p='youtube'] .nick {
+  color: #fff;
+}
+.acard[data-p='youtube'] .acard-sub {
+  color: #aaa;
+}
+.acard[data-p='youtube'] .acard-foot {
+  border-top-color: #272727;
+}
+.acard[data-p='youtube'] .vbadge {
+  color: #aaa;
 }
 
 /* барабаны */
@@ -1475,6 +1614,10 @@
 .sheet-body {
   margin-top: var(--s4);
   overflow-y: auto;
+  scrollbar-width: none;
+}
+.sheet-body::-webkit-scrollbar {
+  display: none;
 }
 .sheet-body .screen {
   padding: 0;
@@ -1486,11 +1629,10 @@
 }
 .big-line {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   font-size: 34px;
   font-weight: 800;
-  color: var(--energy);
 }
 .big-line small {
   color: var(--text-2);
@@ -1618,42 +1760,26 @@
   font-size: 12.5px;
 }
 
-/* ---------- биржа и задания (старый вид, чуть мягче) ---------- */
-.coll-row {
-  display: flex;
+/* ---------- биржа и задания ---------- */
+.ex,
+.tasks {
+  gap: 18px;
+}
+.crow.lot {
   align-items: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 48px;
-  padding: 10px 0;
-  border-top: 1px solid var(--border);
-  text-align: left;
 }
-.coll-row:first-child {
-  border-top: 0;
-}
-.coll-name {
-  flex: 1;
-  font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.coll-meta {
+.crow-price em,
+.delta {
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 600;
   color: var(--text-2);
-  font-size: 13px;
-  white-space: nowrap;
 }
-.lot {
-  align-items: center;
+.delta.up {
+  color: var(--up);
 }
-.lot-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.lot-main .coll-name {
-  flex: none;
+.delta.down {
+  color: var(--down);
 }
 .lot-seller {
   display: block;
@@ -1661,28 +1787,52 @@
   font-size: 12px;
   font-weight: 400;
 }
-.lot-price {
+.link.left {
+  align-self: flex-start;
+  padding-left: 0;
+  margin-top: -10px;
+}
+.mini-btn.white {
+  background: #fff;
+  color: var(--on-white);
+}
+.offer {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  font-weight: 700;
-  white-space: nowrap;
+  gap: 4px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
 }
-.lot-price .mult {
-  font-size: 11.5px;
-  font-weight: 600;
+.plain-list > .offer:first-child {
+  border-top: 0;
+}
+.offer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.offer-act {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
 }
 .idx-row {
   display: grid;
-  grid-template-columns: 110px 1fr 64px;
+  grid-template-columns: 110px 1fr 70px;
   align-items: center;
   gap: 10px;
-  padding: 8px 0;
+  padding: 10px 0;
   border-top: 1px solid var(--border);
   font-size: 13.5px;
 }
-.idx-row:first-of-type {
+.plain-list > .idx-row:first-child {
   border-top: 0;
+}
+.idx-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .idx-val {
   text-align: right;
@@ -1692,16 +1842,24 @@
   width: 100%;
   height: 28px;
 }
+.streak-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--energy);
+}
 .streak-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 4px;
-  margin: 8px 0 12px;
+  gap: 5px;
+  margin: 4px 0 14px;
 }
 .streak-day {
-  padding: 6px 0;
-  border-radius: 10px;
-  background: var(--surface-2);
+  padding: 8px 0;
+  border-radius: 12px;
+  background: var(--surface);
   text-align: center;
   font-size: 11px;
   color: var(--text-2);
@@ -1712,23 +1870,31 @@
   color: var(--text);
 }
 .streak-day.done {
-  background: color-mix(in srgb, var(--up) 18%, transparent);
+  background: color-mix(in srgb, var(--up) 16%, transparent);
 }
 .streak-day.today {
   outline: 2px solid #fff;
+  outline-offset: -2px;
 }
-.task {
+.tasks .btn-white.big {
+  width: 100%;
+}
+.trow {
   padding: 12px 0;
   border-top: 1px solid var(--border);
 }
-.task:first-of-type {
+section > .overline + .trow {
   border-top: 0;
 }
-.task-top {
+.trow-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
+  margin-bottom: 8px;
+}
+.trow-main {
+  min-width: 0;
 }
 .task-title {
   font-weight: 600;
@@ -1737,29 +1903,19 @@
   color: var(--text-2);
   font-size: 12.5px;
 }
-.task .bar {
-  margin-top: 8px;
+.trow-count {
+  flex: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
 }
-.task.done .bar > i {
+.trow.done .bar > i {
   background: var(--up);
 }
-.claim {
-  min-height: 44px;
-  padding: 6px 16px;
-  border-radius: var(--r-pill);
-  background: #fff;
-  color: var(--on-white);
-  font-weight: 700;
-  font-size: 13px;
-  white-space: nowrap;
-}
-.claim:disabled {
-  background: var(--surface-3);
-  color: var(--text-3);
-}
 .claimed {
+  display: flex;
+  flex: none;
   color: var(--up);
-  font-weight: 700;
 }
 
 /* ---------- модальное окно ---------- */

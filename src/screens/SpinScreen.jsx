@@ -8,7 +8,7 @@ import { Mods, CardFoot, platformLine } from '../components/Verdict.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { sellValue, scrapValue } from '../game/economy.js';
-import { fmtAt, fmtThin } from '../format.js';
+import { fmtAt, fmtThin, fmtTime } from '../format.js';
 
 export const COUNTS = [1, 2, 3, 5];
 
@@ -22,13 +22,14 @@ export default function SpinScreen({
   onDecide,
   onDecideAll,
   onShare,
-  spins,
+  afford,
+  nextIn,
   count,
   onCount,
   level,
   free,
   capacity,
-  onOpenSpins,
+  onOpenCharge,
   onOpenCollection,
   onOdds,
 }) {
@@ -44,7 +45,7 @@ export default function SpinScreen({
   const decided = Boolean(hero && revealed);
   const tier = hero ? TIERS[hero.tier] : null;
   const restTotal = pending ? pending.reduce((s, d) => s + sellValue(d), 0) : 0;
-  const n = Math.min(count, Math.max(1, spins));
+  const n = Math.min(count, Math.max(1, afford));
 
   const keep = (id) => {
     if (free <= 0 || leaving.has(id)) return;
@@ -229,17 +230,17 @@ export default function SpinScreen({
             <button className="count-btn" onClick={cycle} aria-label={`Крутить за раз: ${count}`}>
               ×{count}
             </button>
-            {spins > 0 ? (
+            {afford > 0 ? (
               <button className="btn-white big" onClick={() => onSpin(n)}>
                 Крутить
                 <span className="chip-in">
-                  <Icon name="bolt" size={13} />
+                  <span className="at-sign">@</span>
                   {n}
                 </span>
               </button>
             ) : (
-              <button className="btn-white big" onClick={onOpenSpins}>
-                Купить крутки
+              <button className="btn-dark big" onClick={onOpenCharge}>
+                Не хватает @{nextIn !== null ? ` · ${fmtTime(nextIn)}` : ''}
               </button>
             )}
             <button className="foot-icon" onClick={onOdds} aria-label="Шансы выпадения">

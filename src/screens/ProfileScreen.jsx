@@ -50,7 +50,7 @@ export default function ProfileScreen({ items, coins, lifetime, level, luck, onO
         <ProgressBar value={level.into} max={level.need} label="Опыт" />
         <p className="note" style={{ marginTop: 8 }}>
           Опыт даёт каждая крутка (тем больше, чем реже юз), продажа на бирже, бонусы и награды заданий. Уровень на шансы не влияет: за
-          каждый уровень монеты и крутка, а ещё ништяки:
+          каждый уровень монеты и 1 @, а ещё ништяки:
         </p>
         <div className="plain-list">
           {upcoming(level.level).map((p) => (

@@ -1,10 +1,11 @@
 import Icon from './Icon.jsx';
 import Num from './Num.jsx';
-import { fmtAt, fmtLuck, fmtThin } from '../format.js';
+import { fmtAt, fmtLuck, fmtTime } from '../format.js';
 
-// Шапка: баланс с удачей, чип с крутками (тап открывает шторку с таймером и покупкой), справа иконки: пробив и задания.
+// Шапка: баланс в ₽ и в скобках в @ (на @ крутим), под ним удача и время до подзарядки;
+// тап по балансу открывает шторку про @. Справа иконки: пробив и задания.
 // В полном экране баланс уходит в полосу Telegram сверху и стоит по центру.
-export default function Header({ coins, spins, cap, luck, badge, back, onBack, onSpins, onSearch, onTasks }) {
+export default function Header({ coins, luck, nextIn, badge, back, onBack, onBalance, onSearch, onTasks }) {
   return (
     <header className="topbar">
       {back && (
@@ -12,17 +13,15 @@ export default function Header({ coins, spins, cap, luck, badge, back, onBack, o
           <Icon name="back" size={20} />
         </button>
       )}
-      <div className="hbal">
+      <button className="hbal" onClick={onBalance} aria-label="Баланс и подзарядка @">
         <span className="hbal-coins">
           <Num value={coins} duration={500} />
           <small> ₽ ({fmtAt(coins)})</small>
         </span>
-        <div className="hbal-luck">Удача {fmtLuck(luck)}</div>
-      </div>
-      <button className="hbal-spins" onClick={onSpins} aria-label={`Крутки: ${spins}`}>
-        <Icon name="bolt" size={15} />
-        {fmtThin(spins)}
-        {spins < cap && <small>/{cap}</small>}
+        <span className="hbal-luck">
+          Удача {fmtLuck(luck)}
+          {nextIn !== null && <> · +1 @ через {fmtTime(nextIn)}</>}
+        </span>
       </button>
       <div className="hicons">
         <button className="icon-btn" onClick={onSearch} aria-label="Пробить юз">

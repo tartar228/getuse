@@ -22,8 +22,8 @@ import { initialState, reducer, capacity, freeSlots } from './state/game.js';
 import { loadState, saveState, flushNow } from './state/persist.js';
 import { shareDrop } from './share.js';
 import { backButton, haptic, isTelegram } from './telegram.js';
-import { rub, fmtAt, fmtThin, fmtTime } from './format.js';
-import { nextSpinIn, buyPrice, capOf, intervalOf } from './game/spins.js';
+import { fmtAt, fmtThin, fmtTime } from './format.js';
+import { nextSpinIn, capOf, intervalOf, affordable } from './game/spins.js';
 import { claimableCount } from './game/tasks.js';
 import { bonusAvailable, formatReward } from './game/daily.js';
 import { levelOf, levelReward, nextPerk, perksOfLevel, slotPrice } from './game/levels.js';
@@ -42,7 +42,7 @@ export default function App() {
   const [tab, setTab] = useState('spin');
   // подэкран поверх вкладки: 'odds', 'lookup' или { item | lot | list: id }
   const [view, setView] = useState(null);
-  // шторка поверх экрана: 'tasks' или 'spins'
+  // шторка поверх экрана: 'tasks' или 'charge' (про @ и подзарядку)
   const [sheet, setSheet] = useState(null);
   const [platform, setPlatform] = useState('telegram');
   const [count, setCount] = useState(1); // сколько круток за раз: 1, 2, 3 или 5
@@ -154,11 +154,6 @@ export default function App() {
     } else if (top >= 3) haptic.success();
     else haptic.thud();
   }, [pending]);
-
-  const buySpins = (n) => {
-    haptic.select();
-    dispatch({ type: 'buySpins', count: n, now: Date.now() });
-  };
 
   const claim = (id) => {
     haptic.success();
@@ -307,13 +302,14 @@ export default function App() {
         onDecide={decide}
         onDecideAll={decideAll}
         onShare={shareDrop}
-        spins={state.spins}
+        afford={affordable(state)}
+        nextIn={nextIn}
         count={count}
         onCount={setCount}
         level={level}
         free={free}
         capacity={capacity(state)}
-        onOpenSpins={() => setSheet('spins')}
+        onOpenCharge={() => setSheet('charge')}
         onOpenCollection={() => openTab('collection')}
         onOdds={() => setView('odds')}
       />
@@ -370,13 +366,12 @@ export default function App() {
     <div className="app">
       <Header
         coins={state.coins}
-        spins={state.spins}
-        cap={cap}
         luck={luck}
+        nextIn={nextIn}
         badge={badge}
         back={!isTelegram && canGoBack}
         onBack={goBack}
-        onSpins={() => setSheet('spins')}
+        onBalance={() => setSheet('charge')}
         onSearch={() => {
           haptic.select();
           setSheet(null);
@@ -412,28 +407,21 @@ export default function App() {
         <TasksScreen state={state} items={items} now={now} onClaim={claim} onClaimDaily={claimDaily} />
       </BottomSheet>
 
-      <BottomSheet open={sheet === 'spins'} onClose={() => setSheet(null)} overline="Запас" title="Крутки">
+      <BottomSheet open={sheet === 'charge'} onClose={() => setSheet(null)} overline="Крутим за @" title="Заряд">
         <div className="sheet-sec">
           <div className="big-line">
-            <Icon name="bolt" size={22} /> {fmtThin(state.spins)}
-            {state.spins < cap && <small> / {cap}</small>}
+            <span className="at-sign">@</span> {fmtThin(affordable(state))}
+            <small> = {fmtThin(state.coins)} ₽</small>
           </div>
           <p className="note">
-            {nextIn !== null
-              ? `+1 через ${fmtTime(nextIn)}. Крутки копятся сами: +1 каждые ${fmtTime(intervalOf(state))}, до ${cap}.`
-              : `Запас полон: ${cap}. Бесплатные крутки копятся сами: +1 каждые ${fmtTime(intervalOf(state))}.`}{' '}
-            Купленные крутки сверх запаса не сгорают.
+            Одна крутка стоит 1 @ (25 ₽) и оплачивается прямо с баланса, отдельных круток нет. Крутить можно, пока хватает @.
           </p>
-          <div className="act">
-            <button className="btn-sec" onClick={() => buySpins(1)} disabled={state.coins < buyPrice(state, now, 1)}>
-              +1 крутка
-              <small>{rub(buyPrice(state, now, 1))}</small>
-            </button>
-            <button className="btn-sec" onClick={() => buySpins(5)} disabled={state.coins < buyPrice(state, now, 5)}>
-              +5 круток
-              <small>{rub(buyPrice(state, now, 5))}</small>
-            </button>
-          </div>
+          <p className="note">
+            {nextIn !== null
+              ? `Пока на балансе меньше ${cap} @, он подзаряжается сам: +1 @ каждые ${fmtTime(intervalOf(state))}. Следующая через ${fmtTime(nextIn)}.`
+              : `Баланс выше ${cap} @, подзарядка спит. Когда останется меньше, она включится сама: +1 @ каждые ${fmtTime(intervalOf(state))}.`}{' '}
+            Уровни ускоряют подзарядку и поднимают порог.
+          </p>
         </div>
       </BottomSheet>
     </div>

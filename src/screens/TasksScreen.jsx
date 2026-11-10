@@ -7,34 +7,40 @@ import {
   isClaimed,
   isClaimable,
 } from '../game/tasks.js';
-import { DAILY_REWARDS, rewardForStreak, bonusAvailable, formatReward } from '../game/daily.js';
+import { DAILY_REWARDS, rewardForStreak, rewardCoins, bonusAvailable, formatReward } from '../game/daily.js';
 import { fmt } from '../format.js';
 import Icon from '../components/Icon.jsx';
+import ProgressBar from '../components/ProgressBar.jsx';
+
+// 1500 → 1,5к, чтобы награда за день влезла в ячейку
+const compact = (n) => (n >= 1000 ? `${+(n / 1000).toFixed(1)}к`.replace('.', ',') : String(n));
 
 function TaskRow({ def, state, items, onClaim }) {
   const progress = progressOf(def, state, items);
   const claimed = isClaimed(state, def.id);
   const claimable = isClaimable(def, state, items);
   return (
-    <div className={`task ${progress >= def.target ? 'done' : ''}`}>
-      <div className="task-top">
-        <div>
+    <div className={progress >= def.target ? 'trow done' : 'trow'}>
+      <div className="trow-top">
+        <div className="trow-main">
           <div className="task-title">{def.title}</div>
-          <div className="task-reward">
-            {fmt(progress)} / {fmt(def.target)} · награда: {formatReward(def.reward)}
-          </div>
+          <div className="task-reward">{formatReward(def.reward)}</div>
         </div>
         {claimed ? (
-          <span className="claimed">✓</span>
+          <span className="claimed" aria-label="Награда получена">
+            <Icon name="verified" size={22} />
+          </span>
         ) : claimable ? (
-          <button className="claim" onClick={() => onClaim(def.id)}>
+          <button className="mini-btn white" onClick={() => onClaim(def.id)}>
             Забрать
           </button>
-        ) : null}
+        ) : (
+          <span className="trow-count">
+            {fmt(progress)}/{fmt(def.target)}
+          </span>
+        )}
       </div>
-      <div className="bar">
-        <i style={{ width: `${(progress / def.target) * 100}%` }} />
-      </div>
+      <ProgressBar value={progress} max={def.target} label={def.title} />
     </div>
   );
 }
@@ -46,21 +52,24 @@ export default function TasksScreen({ state, items, now, onClaim, onClaimDaily }
   const todayIdx = (Math.max(1, streak) - 1) % DAILY_REWARDS.length;
 
   return (
-    <div className="screen">
-      <div className="seg">
-        <button className={part === 'tasks' ? 'active' : ''} onClick={() => setPart('tasks')}>
+    <div className="screen tasks">
+      <div className="seg-row">
+        <button className={part === 'tasks' ? 'seg-pill active' : 'seg-pill'} onClick={() => setPart('tasks')}>
           Задания
         </button>
-        <button className={part === 'ach' ? 'active' : ''} onClick={() => setPart('ach')}>
+        <button className={part === 'ach' ? 'seg-pill active' : 'seg-pill'} onClick={() => setPart('ach')}>
           Достижения
         </button>
       </div>
 
       {part === 'tasks' ? (
         <>
-          <div className="card">
-            <div className="card-title">
-              Ежедневный бонус · стрик {streak} <span className="streak-flame"><Icon name="flame" size={16} /></span>
+          <section>
+            <div className="overline-row">
+              <span className="overline">Ежедневный бонус</span>
+              <span className="streak-line">
+                <Icon name="flame" size={14} /> стрик {streak}
+              </span>
             </div>
             <div className="streak-days">
               {DAILY_REWARDS.map((r, i) => (
@@ -71,44 +80,43 @@ export default function TasksScreen({ state, items, now, onClaim, onClaimDaily }
                   }`}
                 >
                   <b>{i + 1}</b>
-                  {r.coins}
-                  {r.spins ? ` +${r.spins}` : ''}
+                  {compact(rewardCoins(r))}
                 </div>
               ))}
             </div>
             {available ? (
-              <button className="btn primary" style={{ width: '100%' }} onClick={onClaimDaily}>
+              <button className="btn-white big" onClick={onClaimDaily}>
                 Забрать бонус: {formatReward(rewardForStreak(streak))}
               </button>
             ) : (
               <p className="note">
-                Сегодняшний бонус получен. Заходи завтра: {formatReward(rewardForStreak(streak + 1))}. Пропустишь
-                день — стрик сбросится.
+                Сегодняшний бонус получен. Заходи завтра: {formatReward(rewardForStreak(streak + 1))}. Пропустишь день, стрик
+                сбросится.
               </p>
             )}
-          </div>
+          </section>
 
-          <div className="card">
-            <div className="card-title">Ежедневные</div>
+          <section>
+            <div className="overline">Ежедневные</div>
             {DAILY_TASKS.map((d) => (
               <TaskRow key={d.id} def={d} state={state} items={items} onClaim={onClaim} />
             ))}
-          </div>
+          </section>
 
-          <div className="card">
-            <div className="card-title">Постоянные</div>
+          <section>
+            <div className="overline">Постоянные</div>
             {PERM_TASKS.map((d) => (
               <TaskRow key={d.id} def={d} state={state} items={items} onClaim={onClaim} />
             ))}
-          </div>
+          </section>
         </>
       ) : (
-        <div className="card">
-          <div className="card-title">Достижения</div>
+        <section>
+          <div className="overline">Достижения</div>
           {ACHIEVEMENTS.map((d) => (
             <TaskRow key={d.id} def={d} state={state} items={items} onClaim={onClaim} />
           ))}
-        </div>
+        </section>
       )}
     </div>
   );

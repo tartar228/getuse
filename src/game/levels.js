@@ -2,8 +2,8 @@
 // удачу дают только талисманы (см. talismans.js).
 
 // ---------- базовые числа ----------
-export const BASE_CAP = 20; // запас бесплатных круток
-export const BASE_INTERVAL = 5 * 60 * 1000; // одна бесплатная крутка раз в 5 минут
+export const BASE_CAP = 20; // до скольки @ баланс подзаряжается сам
+export const BASE_INTERVAL = 5 * 60 * 1000; // +1 @ раз в 5 минут
 export const BASE_SLOTS = 12; // мест в коллекции
 export const MAX_BATCH = 5; // круток за раз
 
@@ -28,10 +28,10 @@ export function levelOf(xp) {
 }
 
 // ---------- награды и ништяки ----------
-// За каждый уровень: монеты и крутка. Ништяки навсегда:
+// За каждый уровень: монеты и 1 @. Ништяки навсегда:
 //  каждые 3 уровня +1 место в коллекции;
-//  уровни 5, 15, 25…: крутки копятся быстрее (−20 с, но не быстрее 2 минут);
-//  уровни 10, 20, 30…: запас круток +5.
+//  уровни 5, 15, 25…: подзарядка @ быстрее (−20 с, но не быстрее 2 минут);
+//  уровни 10, 20, 30…: заряд до +5 @.
 export const levelReward = (l) => ({ coins: 40 * l, spins: 1 });
 
 export const slotsAt = (l) => Math.floor(l / 3);
@@ -43,8 +43,8 @@ export const intervalAt = (l) => Math.max(120000, BASE_INTERVAL - 20000 * speedU
 export function perksOfLevel(l) {
   const out = [];
   if (l % 3 === 0) out.push('+1 место в коллекции');
-  if (l % 10 === 5 && intervalAt(l) < intervalAt(l - 1)) out.push('крутки копятся быстрее: −20 с');
-  if (l % 10 === 0) out.push('запас круток +5');
+  if (l % 10 === 5 && intervalAt(l) < intervalAt(l - 1)) out.push('подзарядка @ быстрее: −20 с');
+  if (l % 10 === 0) out.push('заряд до +5 @');
   return out;
 }
 
@@ -55,14 +55,15 @@ export function nextPerk(l) {
     if (!p.length) continue;
     const short = [];
     if (n % 3 === 0) short.push('+1 место');
-    if (n % 10 === 5 && intervalAt(n) < intervalAt(n - 1)) short.push('крутки быстрее');
-    if (n % 10 === 0) short.push('запас +5');
+    if (n % 10 === 5 && intervalAt(n) < intervalAt(n - 1)) short.push('зарядка быстрее');
+    if (n % 10 === 0) short.push('заряд +5 @');
     return { level: n, text: p.join(', '), short: short.join(', ') };
   }
   return null;
 }
 
 // ---------- слоты ----------
-// Купленные места идут парами: цена растёт на 60% с каждой покупкой. Это главный денежный сток.
+// Купленные места идут парами: первая пара 10 000 ₽, дальше цена растёт на 60% с каждой покупкой.
+// Это главный денежный сток, на него приходится копить.
 export const SLOT_PACK = 2;
-export const slotPrice = (bought) => Math.round((400 * Math.pow(1.6, bought)) / 50) * 50;
+export const slotPrice = (bought) => Math.round((10000 * Math.pow(1.6, bought)) / 500) * 500;
