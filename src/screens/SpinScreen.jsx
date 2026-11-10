@@ -2,6 +2,7 @@ import { useState } from 'react';
 import SlotReveal from '../components/SlotReveal.jsx';
 import PlatformMark from '../components/PlatformMark.jsx';
 import DropEffects from '../components/DropEffects.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
@@ -122,14 +123,12 @@ export default function SpinScreen({
             <button className="btn primary" onClick={() => onDecide('keep')}>
               В коллекцию
             </button>
-            <button className="btn" onClick={() => onDecide('sell')}>
+            <ConfirmButton ask={drop.tier >= 3} hint={`+${rub(sellValue(drop))}`} onConfirm={() => onDecide('sell')}>
               Продать сразу
-              <small>+{rub(sellValue(drop))}</small>
-            </button>
-            <button className="btn" onClick={() => onDecide('scrap')}>
+            </ConfirmButton>
+            <ConfirmButton ask={drop.tier >= 3} hint={`+${rub(scrapValue(drop))}`} onConfirm={() => onDecide('scrap')}>
               Разобрать
-              <small>+{rub(scrapValue(drop))}</small>
-            </button>
+            </ConfirmButton>
           </div>
           <button className="link" onClick={() => onShare(drop)}>
             Поделиться дропом

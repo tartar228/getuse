@@ -1,4 +1,3 @@
-import { PLATFORMS } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { rub, rubAt } from '../format.js';
 import PlatformMark from '../components/PlatformMark.jsx';

@@ -61,7 +61,8 @@ export default function SlotReveal({ name, tier, skipKey, onDone, instant = fals
         timer = setTimeout(lockNext, delayFor(lockedRef.current));
       }
     };
-    timer = setTimeout(lockNext, 500);
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    timer = reduced ? setTimeout(finish, 150) : setTimeout(lockNext, 500);
 
     return () => {
       cancelled = true;

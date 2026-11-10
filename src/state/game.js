@@ -4,7 +4,7 @@ import { hydrate, toRaw } from '../game/appraise.js';
 import { FREE_CAP, START_SPINS, refill, buyPrice, recentBuys } from '../game/spins.js';
 import { dayKey, touchVisit, bonusAvailable, rewardForStreak } from '../game/daily.js';
 import { emptyDaily, rollTasks, findDef, isClaimable } from '../game/tasks.js';
-import { advanceMarket, marketInfo } from '../game/market.js';
+import { advanceMarket, marketInfo, normalizeMarket } from '../game/market.js';
 
 // Всё состояние игры. Сохраняется целиком (см. persist.js).
 // collection и pending хранят «сырые» юзы {id, name, platform, ts}.
@@ -25,12 +25,15 @@ export const initialState = () => ({
 });
 
 // Подмешиваем сохранённое в дефолт, чтобы новые поля не ломали старые сохранения
-export function normalize(saved) {
+export function normalize(saved, now = Date.now()) {
   const base = initialState();
   if (!saved) return base;
   return {
     ...base,
     ...saved,
+    // часы телефона могли уйти назад: отметки времени из будущего не копим
+    spinsAt: Math.min(saved.spinsAt || 0, now),
+    buyAt: Math.min(saved.buyAt || 0, now),
     lifetime: {
       spins: saved.lifetime?.spins ?? 0,
       tiers: TIERS.map((_, i) => saved.lifetime?.tiers?.[i] ?? 0),
@@ -39,7 +42,7 @@ export function normalize(saved) {
     daily: { ...base.daily, ...saved.daily },
     tasks: { ...base.tasks, ...saved.tasks, claimed: { ...saved.tasks?.claimed } },
     claimed: { ...saved.claimed },
-    market: saved.market && saved.market.trends && saved.market.lots ? saved.market : null,
+    market: normalizeMarket(saved.market, now),
     collection: Array.isArray(saved.collection) ? saved.collection.filter((c) => c.platform) : [],
   };
 }
@@ -50,6 +53,10 @@ export function advance(state, now) {
   return advanceMarket(touchVisit(rollTasks(refill(state, now), now), now), now);
 }
 
+// Офферы на юз, которого больше нет в коллекции, сразу убираем: иначе «Принять» будет мёртвой кнопкой
+const withoutOffers = (market, itemId) =>
+  (market ? { ...market, offers: market.offers.filter((o) => o.itemId !== itemId) } : market);
+
 function applyReward(state, r) {
   return { ...state, coins: state.coins + (r.coins || 0), spins: state.spins + (r.spins || 0) };
 }
@@ -57,7 +64,7 @@ function applyReward(state, r) {
 export function reducer(state, action) {
   switch (action.type) {
     case 'load':
-      return advance(normalize(action.state), action.now);
+      return advance(normalize(action.state, action.now), action.now);
 
     // раз в секунду: докручиваем таймер, следим за сменой дня
     case 'tick':
@@ -107,6 +114,7 @@ export function reducer(state, action) {
         ...state,
         coins: state.coins + gain,
         collection: state.collection.filter((c) => c.id !== action.id),
+        market: withoutOffers(state.market, action.id),
       };
     }
 
@@ -167,7 +175,7 @@ export function reducer(state, action) {
       return {
         ...s,
         collection: s.collection.filter((c) => c.id !== action.id),
-        market: { ...s.market, listings: [listing, ...s.market.listings] },
+        market: { ...withoutOffers(s.market, d.id), listings: [listing, ...s.market.listings] },
       };
     }
 

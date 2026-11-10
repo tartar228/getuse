@@ -211,8 +211,12 @@ const BUILDERS = { junk, pattern, word };
 
 // Генератор всегда строже платформы: юз не начинается/не заканчивается разделителем
 // и не содержит двух разделителей подряд — так юзы выглядят аккуратно.
+// Грубые подстроки: такие юзы выбрасываем и генерируем заново (юзом можно поделиться в чате).
+const BAD = /fuck|shit|cunt|nigg|fagg|nazi|whore|slut|bitch|porn|pussy/;
+
 function acceptable(s, p) {
   return (
+    !BAD.test(s.replace(/[._-]/g, '')) &&
     s.length >= p.minLen &&
     s.length <= p.maxLen &&
     p.validate(s) &&

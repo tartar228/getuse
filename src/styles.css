@@ -229,7 +229,7 @@ button {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px 14px;
   border-radius: 999px;
   background: var(--surface);
@@ -422,6 +422,10 @@ button {
 .btn:active:not(:disabled) {
   transform: scale(0.98);
 }
+.btn.armed {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 22%, var(--raised));
+}
 .btn:disabled {
   opacity: 0.4;
   cursor: default;
@@ -516,8 +520,10 @@ button {
   font-size: 12.5px;
 }
 .odds-price {
-  width: 92px;
+  flex: none;
+  min-width: 92px;
   text-align: right;
+  white-space: nowrap;
   font-size: 12.5px;
   font-variant-numeric: tabular-nums;
 }
@@ -548,15 +554,6 @@ button {
   font-size: 13px;
   white-space: nowrap;
 }
-.stub {
-  text-align: center;
-  color: var(--hint);
-}
-.stub-stage {
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 4px;
-}
 .summary {
   display: grid;
   grid-template-columns: 1fr 2fr;
@@ -578,7 +575,7 @@ button {
   gap: 6px;
 }
 .sort {
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 12px;
   border-radius: 10px;
   background: var(--surface);
@@ -685,6 +682,9 @@ button {
 .stat-row:first-of-type {
   border-top: 0;
 }
+.stat-row b {
+  white-space: nowrap;
+}
 
 /* ---------- бейджи ---------- */
 .badge {
@@ -724,7 +724,7 @@ button {
   padding: 3px;
 }
 .seg button {
-  min-height: 40px;
+  min-height: 44px;
   padding: 8px;
   border-radius: 9px;
   font-weight: 600;
@@ -798,7 +798,7 @@ button {
   background: var(--ok);
 }
 .claim {
-  min-height: 36px;
+  min-height: 44px;
   padding: 6px 14px;
   border-radius: 10px;
   background: var(--accent);

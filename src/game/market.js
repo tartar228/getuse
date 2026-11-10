@@ -165,6 +165,34 @@ export function createMarket(now) {
   return m;
 }
 
+// Достраивает недостающие поля сохранённой биржи, чтобы старое или повреждённое сохранение
+// не роняло игру. Лоты игрока (listings) и офферы сохраняются, если они есть.
+export function normalizeMarket(saved, now) {
+  if (!saved || typeof saved !== 'object') return null;
+  const base = createMarket(now);
+  const arr = (v) => (Array.isArray(v) ? v : []);
+  const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {});
+  const tr = saved.trends;
+  const trendsOk = tr && obj(tr.p) === tr.p && Array.isArray(tr.t) && tr.t.length === TIERS.length;
+  const histOk = saved.hist && obj(saved.hist.p) === saved.hist.p && obj(saved.hist.t) === saved.hist.t;
+  return {
+    ...base,
+    ...saved,
+    t: Number.isFinite(saved.t) ? Math.min(saved.t, now) : now, // часы телефона могли уйти назад
+    steps: Number.isFinite(saved.steps) ? saved.steps : 0,
+    lots: Array.isArray(saved.lots) && saved.lots.length ? saved.lots : base.lots,
+    listings: arr(saved.listings),
+    offers: arr(saved.offers),
+    events: arr(saved.events),
+    news: arr(saved.news),
+    log: arr(saved.log),
+    sat: obj(saved.sat),
+    trends: trendsOk ? { p: { ...base.trends.p, ...tr.p }, t: tr.t } : base.trends,
+    hist: histOk ? saved.hist : base.hist,
+    summary: saved.summary && typeof saved.summary === 'object' ? saved.summary : null,
+  };
+}
+
 // ---------- один шаг рынка ----------
 function pushNews(m, t, text) {
   m.news.unshift({ id: uid(), t, text });

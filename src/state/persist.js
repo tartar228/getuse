@@ -40,7 +40,13 @@ function join(keys) {
   if (!keys.meta) return null;
   const { inv, mk, ...rest } = JSON.parse(keys.meta);
   let collection = [];
-  for (let i = 0; i < inv; i++) collection = collection.concat(JSON.parse(keys[`inv${i}`] || '[]').map(unpack));
+  for (let i = 0; i < inv; i++) {
+    try {
+      collection = collection.concat(JSON.parse(keys[`inv${i}`] || '[]').map(unpack));
+    } catch {
+      /* битый кусок пропускаем, остальная коллекция уцелеет */
+    }
+  }
   let market = null;
   if (mk) {
     let str = '';
@@ -161,4 +167,20 @@ export function flushNow() {
   if (timer) clearTimeout(timer);
   timer = null;
   flush();
+}
+
+// Полный сброс сохранения (кнопка в окне ошибки): без meta игра стартует заново
+export async function resetSaved() {
+  try {
+    localStorage.removeItem(LS_KEY);
+  } catch {
+    /* нечего чистить */
+  }
+  if (cloud.available) {
+    try {
+      await cloud.removeItems(['meta']);
+    } catch {
+      /* облако недоступно */
+    }
+  }
 }

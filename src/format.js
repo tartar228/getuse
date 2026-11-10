@@ -23,7 +23,7 @@ export function fmtPct(p) {
   return '—';
 }
 
-export const oneIn = (p) => (p > 0 ? `1 из ${fmt(1 / p)}` : 'не выпадает');
+export const oneIn = (p) => (p >= 0.5 ? `≈ ${Math.round(p * 10)} из 10` : p > 0 ? `1 из ${fmt(1 / p)}` : 'не выпадает');
 
 // Множитель: ×12, ×1.5, ×0.3
 export function fmtMult(m) {

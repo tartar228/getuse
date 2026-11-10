@@ -158,7 +158,8 @@ export default function App() {
 
   // ---------- навигация и кнопка «Назад» ----------
   const goBack = useCallback(() => {
-    if (view) setView(null);
+    if (view?.list) setView({ item: view.list });
+    else if (view) setView(null);
     else setTab('spin');
   }, [view]);
 

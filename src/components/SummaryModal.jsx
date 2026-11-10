@@ -1,4 +1,3 @@
-import { PLATFORMS } from '../game/platforms.js';
 import { rub, fmtDuration } from '../format.js';
 import PlatformMark from './PlatformMark.jsx';
 

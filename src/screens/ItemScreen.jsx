@@ -4,6 +4,7 @@ import { sellValue, scrapValue } from '../game/economy.js';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { rub, rubAt } from '../format.js';
 import PlatformMark from '../components/PlatformMark.jsx';
+import ConfirmButton from '../components/ConfirmButton.jsx';
 
 // Карточка юза из коллекции
 export default function ItemScreen({ drop, onSell, onScrap, onShare, onList }) {
@@ -24,14 +25,12 @@ export default function ItemScreen({ drop, onSell, onScrap, onShare, onList }) {
       </div>
 
       <div className="actions two">
-        <button className="btn" onClick={onSell}>
+        <ConfirmButton ask={drop.tier >= 3} hint={`+${rub(sellValue(drop))}`} onConfirm={onSell}>
           Продать сразу
-          <small>+{rub(sellValue(drop))}</small>
-        </button>
-        <button className="btn" onClick={onScrap}>
+        </ConfirmButton>
+        <ConfirmButton ask={drop.tier >= 3} hint={`+${rub(scrapValue(drop))}`} onConfirm={onScrap}>
           Разобрать
-          <small>+{rub(scrapValue(drop))}</small>
-        </button>
+        </ConfirmButton>
       </div>
       <button className="btn primary" onClick={onList}>
         Выставить на биржу

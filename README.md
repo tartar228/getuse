@@ -9,7 +9,7 @@ React + Vite, без сервера. Прогресс хранится в Telegr
 
 ```bash
 npm install
-npm run dev        # локально, в браузере (Telegram SDK эмулируется заглушкой)
+npm run dev        # локально, в браузере (вне Telegram игра работает на localStorage)
 npm run build      # продакшен-сборка в dist/
 npm run stats      # симуляция дропа: шансы тиров, экономика (пишет src/game/dropStats.json)
 ```

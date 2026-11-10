@@ -18,6 +18,7 @@ const infoOf = (l) => ({ platform: l.platform, tier: l.tier, base: l.base, cat: 
 // Как быстро продастся лот: по средней задержке покупателя
 export function speedLabel(ask, fair, tier) {
   const mean = 1 / saleChance(ask, fair, tier); // минут
+  if (!Number.isFinite(mean) || mean > 30 * 1440) return 'почти никогда не продастся';
   const text = mean < 30 ? 'очень быстро' : mean < 120 ? 'быстро' : mean < 480 ? 'средне' : mean < 1440 ? 'долго' : 'очень долго';
   return `${text} (≈ ${fmtDuration(mean * 60000)})`;
 }
