@@ -2,7 +2,8 @@ import Icon from './Icon.jsx';
 import { TIERS } from '../game/value.js';
 import { modChips } from '../game/modifiers.js';
 import { PLATFORMS } from '../game/platforms.js';
-import { fmtMult } from '../format.js';
+import Num from './Num.jsx';
+import { fmtAt, fmtMult, fmtThin } from '../format.js';
 
 export function Rarity({ tier }) {
   const t = TIERS[tier];
@@ -32,4 +33,20 @@ export function Mods({ breakdown }) {
 export function platformLine(d, extra = '') {
   const marks = d.tags.filter((t) => t === 'Коллекционный' || t === 'Короткий');
   return [PLATFORMS[d.platform].name, ...marks, extra].filter(Boolean).join(' · ');
+}
+
+// Нижняя строка карточки: редкость слева, цена справа, под ней эквивалент в @ в скобках
+export function CardFoot({ tier, price, animate = false }) {
+  return (
+    <>
+      <Rarity tier={tier} />
+      <div className="cprice">
+        <b>
+          {animate ? <Num value={price} from={0} duration={800} /> : fmtThin(price)}
+          <span className="cur"> ₽</span>
+        </b>
+        <small>({fmtAt(price)})</small>
+      </div>
+    </>
+  );
 }

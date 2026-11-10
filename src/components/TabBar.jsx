@@ -44,7 +44,7 @@ export default function TabBar({ tabs, active, onSelect, avatar, avatarActive, o
         onClick={onAvatar}
         aria-label="Профиль"
       >
-        <span>{avatar}</span>
+        {avatar}
       </button>
     </nav>
   );

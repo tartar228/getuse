@@ -1,15 +1,13 @@
 import { useMemo, useState } from 'react';
-import { ReelPlate, IdlePlate } from '../components/Plate.jsx';
-import Plate from '../components/Plate.jsx';
+import AccountCard, { Nick } from '../components/AccountCard.jsx';
 import Icon from '../components/Icon.jsx';
-import Num from '../components/Num.jsx';
 import ProgressBar from '../components/ProgressBar.jsx';
 import DropEffects from '../components/DropEffects.jsx';
 import ConfirmButton from '../components/ConfirmButton.jsx';
+import { Mods, CardFoot, platformLine } from '../components/Verdict.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { sellValue, scrapValue } from '../game/economy.js';
-import { Rarity, Mods, platformLine } from '../components/Verdict.jsx';
 import { fmtAt, fmtThin } from '../format.js';
 
 export const COUNTS = [1, 2, 3, 5];
@@ -38,7 +36,7 @@ export default function SpinScreen({
   const [fxId, setFxId] = useState(null);
   const [leaving, setLeaving] = useState(() => new Set());
 
-  // самый ценный юз показываем большим, остальные «выглядывают» списком
+  // самый ценный юз показываем крупно, остальные «выглядывают» списком
   const sorted = useMemo(() => (pending ? [...pending].sort((a, b) => b.v0 - a.v0) : []), [pending]);
   const hero = sorted[0] || null;
   const rest = sorted.slice(1);
@@ -90,53 +88,55 @@ export default function SpinScreen({
           onClick={() => revealing && setSkipKey((k) => k + 1)}
         >
           <span className="stage-glow" aria-hidden="true" />
-          <div className="plate-wrap">
-            {hero ? (
-              <ReelPlate
-                key={hero.id}
-                name={hero.name}
-                platform={hero.platform}
-                tier={hero.tier}
-                series={hero.series}
-                instant={decided}
-                skipKey={skipKey}
-                onDone={() => {
-                  setFxId(hero.id);
-                  onRevealed();
-                }}
-              />
-            ) : (
-              <IdlePlate platform={platform} />
-            )}
-          </div>
+          <AccountCard
+            platform={hero ? hero.platform : platform}
+            tier={decided ? hero.tier : null}
+            spinning={revealing}
+            nick={
+              hero ? (
+                <Nick
+                  key={hero.id}
+                  text={`@${hero.name}`}
+                  reel={{
+                    tier: hero.tier,
+                    skipKey,
+                    instant: decided,
+                    onDone: () => {
+                      setFxId(hero.id);
+                      onRevealed();
+                    },
+                  }}
+                />
+              ) : (
+                <Nick text="@?????" className="idle" />
+              )
+            }
+            sub={hero ? platformLine(hero) : PLATFORMS[platform].name}
+            foot={
+              decided ? (
+                <CardFoot tier={hero.tier} price={hero.price} animate />
+              ) : revealing ? (
+                <span className="cfoot-note spinning-text">Крутим…</span>
+              ) : (
+                <span className="cfoot-note">Готов крутить</span>
+              )
+            }
+          />
           {decided && fxId === hero.id && (
             <DropEffects key={`fx-${hero.id}`} tier={hero.tier} color={tier.color} playId={hero.id} />
           )}
         </div>
 
-        <div className={hero ? 'verdict' : 'verdict idle'}>
-          {decided && (
-            <button className="icon-btn stage-share" onClick={() => onShare(hero)} aria-label="Поделиться дропом">
-              <Icon name="share" size={18} />
-            </button>
-          )}
-          {!hero && (
-            <>
-              <div className="rarity idle">Готов крутить</div>
-              <div className="rules">{PLATFORMS[platform].rules.join(' · ')}</div>
-            </>
-          )}
-          {revealing && <div className="rarity spinning">Крутим</div>}
+        <div className="under">
+          {!hero && <div className="rules">{PLATFORMS[platform].rules.join(' · ')}</div>}
           {decided && (
             <div className="result" key={hero.id}>
-              <Rarity tier={hero.tier} />
-              {hero.no > 0 && <div className="spin-no">№ {fmtThin(hero.no)}</div>}
-              <div className="price-xl">
-                <Num value={hero.price} from={0} duration={800} />
-                <span className="cur"> ₽</span>
+              <div className="under-line">
+                <span>{hero.no > 0 ? `№ ${fmtThin(hero.no)}` : ''}</span>
+                <button className="icon-btn sm" onClick={() => onShare(hero)} aria-label="Поделиться дропом">
+                  <Icon name="share" size={16} />
+                </button>
               </div>
-              <div className="price-at">≈ {fmtAt(hero.price)}</div>
-              <div className="platform-line">{platformLine(hero)}</div>
               <Mods breakdown={hero.breakdown} />
             </div>
           )}
@@ -176,7 +176,7 @@ export default function SpinScreen({
               <ConfirmButton
                 className="btn-sec"
                 ask={hero.tier >= 3}
-                hint={fmtThin(sellValue(hero))}
+                hint={`${fmtThin(sellValue(hero))} ₽`}
                 onConfirm={() => onDecide(hero.id, 'sell')}
               >
                 Продать
@@ -207,9 +207,13 @@ export default function SpinScreen({
                     <span className="rdot" style={{ background: TIERS[d.tier].color }} />
                     {TIERS[d.tier].name}
                   </span>
-                  <Plate name={d.name} platform={d.platform} series={d.series} size="sm" />
+                  <span className="rnick">
+                    <Icon name={d.platform} size={14} />@{d.name}
+                  </span>
                 </div>
-                <span className="rprice">{fmtThin(d.price)} ₽</span>
+                <span className="rprice">
+                  {fmtThin(d.price)} ₽<small>({fmtAt(d.price)})</small>
+                </span>
                 <button className="mini-btn" disabled={free <= 0} onClick={() => keep(d.id)}>
                   {free > 0 ? 'В коллекцию' : 'Нет мест'}
                 </button>

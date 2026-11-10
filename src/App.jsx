@@ -14,14 +14,15 @@ import Header from './components/Header.jsx';
 import TabBar from './components/TabBar.jsx';
 import BottomSheet from './components/BottomSheet.jsx';
 import Toasts from './components/Toasts.jsx';
+import UserAvatar from './components/UserAvatar.jsx';
 import Icon from './components/Icon.jsx';
 import { rollDrop } from './game/generator.js';
 import { hydrate } from './game/appraise.js';
 import { initialState, reducer, capacity, freeSlots } from './state/game.js';
 import { loadState, saveState, flushNow } from './state/persist.js';
 import { shareDrop } from './share.js';
-import { backButton, haptic, isTelegram, userInitial } from './telegram.js';
-import { rub, fmtThin, fmtTime } from './format.js';
+import { backButton, haptic, isTelegram } from './telegram.js';
+import { rub, fmtAt, fmtThin, fmtTime } from './format.js';
 import { nextSpinIn, buyPrice, capOf, intervalOf } from './game/spins.js';
 import { claimableCount } from './game/tasks.js';
 import { bonusAvailable, formatReward } from './game/daily.js';
@@ -194,7 +195,7 @@ export default function App() {
     const d = pending?.find((x) => x.id === id);
     if (!d || !revealed) return;
     haptic.select();
-    if (kind === 'sell') toast(`+${fmtThin(sellValue(d))} ₽`, 'Продано');
+    if (kind === 'sell') toast(`+${fmtThin(sellValue(d))} ₽ (${fmtAt(sellValue(d))})`, 'Продано');
     if (kind === 'scrap') toast('Разобран на запчасти');
     dispatch({ type: 'decide', id, kind });
   };
@@ -395,7 +396,7 @@ export default function App() {
         tabs={TABS}
         active={view || tab === 'profile' ? null : tab}
         onSelect={openTab}
-        avatar={userInitial()}
+        avatar={<UserAvatar />}
         avatarActive={avatarActive}
         onAvatar={() => openTab('profile')}
         badges={{ market: market ? market.offers.length : 0 }}

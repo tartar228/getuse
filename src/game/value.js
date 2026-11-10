@@ -18,12 +18,28 @@ export function tierOf(v0) {
 }
 
 // ---------- формула ценности ----------
-// v0 = длина × слово × чистота × паттерн × бонус платформы
-// price = v0 × множитель платформы (на бирже потом ещё рыночные события)
+// v0 = длина × слово × чистота × паттерн × бонус платформы (по v0 определяется редкость)
+// price = кривая(v0) × множитель платформы (на бирже потом ещё рыночные события)
+
+// Кривая цены: до порога цена равна v0, выше растёт быстрее (степень 2), чтобы редкие юзы стоили прям дорого:
+// эпик от 1 000, легендарный от ≈12 000, мифик от ≈140 000, а самые громкие ники и мемы уходят за миллион.
+export const PRICE_KNEE = 1000;
+export const PRICE_POW = 2;
+export const priceCurve = (v0) => (v0 <= PRICE_KNEE ? v0 : PRICE_KNEE * Math.pow(v0 / PRICE_KNEE, PRICE_POW));
+export const priceOf = (v0, platform) => niceRound(priceCurve(v0) * platform.priceMult);
 
 // Чем короче, тем дороже: каждый символ длины ≈ в 1.75 раза
 export function lengthBase(len) {
   return Math.max(0.6, 8 * Math.pow(1.75, 10 - len));
+}
+
+// Слово ценно само по себе, а не длиной: у чистого слова длина считается не больше 5 символов,
+// у составного из двух слов не больше 7. Иначе football или lightning стоили бы как мусор.
+function effectiveLen(a) {
+  if (a.word && a.digits === 0 && a.seps === 0 && a.word.cov >= 0.9) {
+    return Math.min(a.len, a.word.words.length === 1 ? 5 : 7);
+  }
+  return a.len;
 }
 
 // Чистота. Цифры обесценивают юз почти сразу: одна цифра ≈ ×0.3, три — уже мусор.
@@ -114,7 +130,7 @@ export function niceRound(x) {
 export function valuate(a, platform) {
   const purity = purityRows(a);
   const parts = {
-    length: lengthBase(a.len),
+    length: lengthBase(effectiveLen(a)),
     word: wordMult(a),
     purity: purity.reduce((m, r) => m * r.mult, 1),
     pattern: patternMult(a.patterns),
@@ -142,14 +158,16 @@ export function valuate(a, platform) {
       mult: parts.bonus,
     });
   }
+  const bump = priceCurve(v0) / v0;
+  if (bump > 1.005) rows.push({ label: 'Надбавка за редкость', mult: bump });
   rows.push({ label: `Платформа ${platform.name}`, mult: platform.priceMult });
 
   return {
     v0,
     tier: tierOf(v0),
-    price: niceRound(v0 * platform.priceMult),
+    price: priceOf(v0, platform),
     parts,
-    breakdown: { base: Math.round(parts.length), len: a.len, rows },
+    breakdown: { base: Math.round(parts.length), len: effectiveLen(a), actual: a.len, rows },
     tags: describe(a, platform),
     series: seriesOf(a, platform),
   };

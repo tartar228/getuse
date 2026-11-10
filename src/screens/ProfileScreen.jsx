@@ -1,9 +1,11 @@
-import Plate from '../components/Plate.jsx';
+import Icon from '../components/Icon.jsx';
+import UserAvatar from '../components/UserAvatar.jsx';
 import ProgressBar from '../components/ProgressBar.jsx';
+import { useState } from 'react';
 import { TIERS } from '../game/value.js';
 import { perksOfLevel } from '../game/levels.js';
-import { fmtLuck, fmtThin } from '../format.js';
-import { userInitial } from '../telegram.js';
+import { fmtAt, fmtLuck, fmtThin } from '../format.js';
+import { fullscreen, userInfo } from '../telegram.js';
 
 // ближайшие уровни с ништяками для списка
 function upcoming(level, count = 4) {
@@ -20,13 +22,16 @@ export default function ProfileScreen({ items, coins, lifetime, level, luck, onO
   const best = [...items].sort((a, b) => b.price - a.price || b.ts - a.ts).slice(0, 3);
   const total = items.reduce((s, d) => s + d.price, 0);
   const owned = TIERS.map((_, i) => items.filter((d) => d.tier === i).length);
+  const me = userInfo();
+  const [fs, setFs] = useState(fullscreen.enabled);
 
   return (
     <div className="screen">
       <div className="prof-head">
-        <span className="prof-avatar">{userInitial()}</span>
-        <div>
-          <h1 className="display">Профиль</h1>
+        <UserAvatar className="big" />
+        <div className="prof-id">
+          <h1 className="display">{me.name}</h1>
+          {me.username && <div className="prof-user">@{me.username}</div>}
           <div className="chips-row">
             <span className="badge-chip">ур. {level.level}</span>
             <span className="badge-chip">в игре {fmtThin(lifetime.spins)} круток</span>
@@ -51,7 +56,7 @@ export default function ProfileScreen({ items, coins, lifetime, level, luck, onO
           {upcoming(level.level).map((p) => (
             <div className="stat-row" key={p.level}>
               <span>Уровень {p.level}</span>
-              <b>{p.text}</b>
+              <b className="wrap">{p.text}</b>
             </div>
           ))}
         </div>
@@ -70,9 +75,13 @@ export default function ProfileScreen({ items, coins, lifetime, level, luck, onO
                     <span className="rdot" style={{ background: TIERS[d.tier].color }} />
                     {i + 1} · {TIERS[d.tier].name}
                   </span>
-                  <Plate name={d.name} platform={d.platform} series={d.series} size="sm" />
+                  <span className="rnick">
+                    <Icon name={d.platform} size={14} />@{d.name}
+                  </span>
                 </span>
-                <span className="crow-price">{fmtThin(d.price)} ₽</span>
+                <span className="crow-price">
+                  {fmtThin(d.price)} ₽<small>({fmtAt(d.price)})</small>
+                </span>
               </button>
             ))}
           </div>
@@ -84,16 +93,39 @@ export default function ProfileScreen({ items, coins, lifetime, level, luck, onO
         )}
       </section>
 
+      {fullscreen.available && (
+        <section>
+          <div className="overline">Настройки</div>
+          <button
+            className="switch-row"
+            role="switch"
+            aria-checked={fs}
+            onClick={() => {
+              fullscreen.set(!fs);
+              setFs(!fs);
+            }}
+          >
+            <span>Полный экран</span>
+            <span className={fs ? 'switch on' : 'switch'} aria-hidden="true" />
+          </button>
+          <p className="note">Сверху остаётся зона кнопок Telegram. Если она кажется пустой, выключи: игра откроется в обычном окне.</p>
+        </section>
+      )}
+
       <section>
         <div className="overline">Статистика</div>
         <div className="plain-list">
           <div className="stat-row">
             <span>Баланс</span>
-            <b>{fmtThin(coins)} ₽</b>
+            <b>
+              {fmtThin(coins)} ₽ <span className="muted">({fmtAt(coins)})</span>
+            </b>
           </div>
           <div className="stat-row">
             <span>Стоимость коллекции</span>
-            <b>{fmtThin(total)} ₽</b>
+            <b>
+              {fmtThin(total)} ₽ <span className="muted">({fmtAt(total)})</span>
+            </b>
           </div>
           <div className="stat-row">
             <span>Юзов в коллекции</span>

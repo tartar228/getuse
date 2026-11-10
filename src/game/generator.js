@@ -238,18 +238,25 @@ export function generateName(rng, p, pool) {
 
 let counter = 0;
 
+// Высокие редкости режем отбраковкой: выпавший юз тира t остаётся с шансом KEEP[t], иначе крутим заново.
+// Так шансы редких падают, а сами юзы и формула цены не меняются. Подкручивать здесь.
+export const KEEP = [1, 1, 0.6, 0.35, 0.15, 0.1];
+
 function rollOnce(platformId, rng) {
   const p = PLATFORMS[platformId];
-  const wanted = pickWeighted(rng, POOL_WEIGHTS);
-  const { name, pool } = generateName(rng, p, wanted);
-  return {
-    id: `${Date.now().toString(36)}${(counter++).toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
-    name,
-    platform: platformId,
-    pool,
-    ts: Date.now(),
-    ...appraise(name, platformId),
-  };
+  for (;;) {
+    const wanted = pickWeighted(rng, POOL_WEIGHTS);
+    const { name, pool } = generateName(rng, p, wanted);
+    const d = {
+      id: `${Date.now().toString(36)}${(counter++).toString(36)}${Math.floor(Math.random() * 1e6).toString(36)}`,
+      name,
+      platform: platformId,
+      pool,
+      ts: Date.now(),
+      ...appraise(name, platformId),
+    };
+    if (KEEP[d.tier] >= 1 || rng() < KEEP[d.tier]) return d;
+  }
 }
 
 // Удача ×L: крутка делает floor(L) попыток, плюс ещё одну с шансом дробной части L,

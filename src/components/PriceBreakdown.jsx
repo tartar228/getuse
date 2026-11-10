@@ -5,7 +5,11 @@ export default function PriceBreakdown({ breakdown }) {
   return (
     <div className="calc">
       <div className="calc-row">
-        <span>База за длину ({breakdown.len} симв.)</span>
+        <span>
+          {breakdown.actual && breakdown.actual !== breakdown.len
+            ? `База: слово из ${breakdown.actual} симв. считается как ${breakdown.len}`
+            : `База за длину (${breakdown.len} симв.)`}
+        </span>
         <span>{rub(breakdown.base)}</span>
       </div>
       {breakdown.rows.map((r) => (

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { PlateShell, plateFont } from '../components/Plate.jsx';
+import AccountCard, { Nick } from '../components/AccountCard.jsx';
 import Icon from '../components/Icon.jsx';
-import Num from '../components/Num.jsx';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
-import { Rarity, Mods, platformLine } from '../components/Verdict.jsx';
+import { Mods, CardFoot, platformLine } from '../components/Verdict.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { lookup, nameProblem, normalizeName } from '../game/lookup.js';
 import { fmtAt, fmtThin } from '../format.js';
@@ -60,23 +59,15 @@ export default function LookupScreen({ platform: initialPlatform }) {
     return (
       <div className="screen lookup">
         <div className="overline">Пробив юза</div>
-        <div className="plate-wrap lk-plate">
-          <PlateShell platform={r.platform} size="lg" series={r.series} fs={plateFont(r.name.length)}>
-            <span className="plate-text">@{r.name}</span>
-          </PlateShell>
-        </div>
-        <div className="verdict lk-verdict">
-          <div className="result">
-            <Rarity tier={r.tier} />
-            <div className="price-xl">
-              <Num value={r.price} from={0} duration={700} />
-              <span className="cur"> ₽</span>
-            </div>
-            <div className="price-at">≈ {fmtAt(r.price)}</div>
-            <div className="platform-line">{platformLine(r)}</div>
-            <Mods breakdown={r.breakdown} />
-          </div>
-        </div>
+        <AccountCard
+          platform={r.platform}
+          tier={r.tier}
+          nick={<Nick text={`@${r.name}`} />}
+          sub={platformLine(r)}
+          foot={<CardFoot tier={r.tier} price={r.price} animate />}
+          className="lk-card"
+        />
+        <Mods breakdown={r.breakdown} />
 
         <div>
           <div className="overline">Из чего цена</div>
@@ -92,7 +83,9 @@ export default function LookupScreen({ platform: initialPlatform }) {
                   <span>
                     <Icon name={o.platform} size={14} /> {PLATFORMS[o.platform].name}
                   </span>
-                  <b>{fmtThin(o.price)} ₽</b>
+                  <b>
+                    {fmtThin(o.price)} ₽ <span className="muted">({fmtAt(o.price)})</span>
+                  </b>
                 </div>
               ))}
             </div>
@@ -132,14 +125,12 @@ export default function LookupScreen({ platform: initialPlatform }) {
         ))}
       </div>
 
-      <div className="plate-wrap lk-plate">
-        <PlateShell platform={platform} size="lg" fs={plateFont(Math.max(name.length, 8))}>
-          <span className={name ? 'plate-text' : 'plate-text idle'}>
-            @{name || 'username'}
-            <span className="caret" aria-hidden="true" />
-          </span>
-        </PlateShell>
-      </div>
+      <AccountCard
+        platform={platform}
+        nick={<Nick text={`@${name || 'username'}`} className={name ? '' : 'idle'} after={<span className="caret" aria-hidden="true" />} />}
+        sub={PLATFORMS[platform].name}
+        className="lk-card"
+      />
       <div className={name && problem ? 'lk-hint bad' : 'lk-hint'}>
         {name && problem ? problem : p.rules.slice(0, 2).join(' · ')}
       </div>

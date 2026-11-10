@@ -1,12 +1,12 @@
-import Plate from '../components/Plate.jsx';
+import AccountCard, { Nick } from '../components/AccountCard.jsx';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import Icon from '../components/Icon.jsx';
 import ConfirmButton from '../components/ConfirmButton.jsx';
-import { Rarity, Mods, platformLine } from '../components/Verdict.jsx';
+import { Mods, CardFoot, platformLine } from '../components/Verdict.jsx';
 import { TIERS } from '../game/value.js';
 import { sellValue, scrapValue } from '../game/economy.js';
 import { LUCK_BONUS } from '../game/talismans.js';
-import { fmtAt, fmtThin } from '../format.js';
+import { fmtThin } from '../format.js';
 
 // Карточка юза из коллекции
 export default function ItemScreen({ drop, isTalisman, onSell, onScrap, onShare, onList, onTalisman, onUntalisman }) {
@@ -18,33 +18,30 @@ export default function ItemScreen({ drop, isTalisman, onSell, onScrap, onShare,
     <div className="screen">
       <div className={`stage tier-${drop.tier}`} style={{ '--tier': tier.color }}>
         <span className="stage-glow" aria-hidden="true" />
-        <div className="plate-wrap">
-          <Plate name={drop.name} platform={drop.platform} series={drop.series} size="lg" />
-        </div>
+        <AccountCard
+          platform={drop.platform}
+          tier={drop.tier}
+          nick={<Nick text={`@${drop.name}`} />}
+          sub={platformLine(drop)}
+          foot={<CardFoot tier={drop.tier} price={drop.price} />}
+        />
       </div>
 
-      <div className="verdict">
-        <button className="icon-btn stage-share" onClick={() => onShare(drop)} aria-label="Поделиться">
-          <Icon name="share" size={18} />
-        </button>
-        <div className="result">
-          <Rarity tier={drop.tier} />
-          {drop.no > 0 && <div className="spin-no">№ {fmtThin(drop.no)}</div>}
-          <div className="price-xl">
-            {fmtThin(drop.price)}
-            <span className="cur"> ₽</span>
-          </div>
-          <div className="price-at">≈ {fmtAt(drop.price)}</div>
-          <div className="platform-line">{platformLine(drop)}</div>
-          <Mods breakdown={drop.breakdown} />
+      <div className="under">
+        <div className="under-line">
+          <span>{drop.no > 0 ? `№ ${fmtThin(drop.no)}` : ''}</span>
+          <button className="icon-btn sm" onClick={() => onShare(drop)} aria-label="Поделиться">
+            <Icon name="share" size={16} />
+          </button>
         </div>
+        <Mods breakdown={drop.breakdown} />
       </div>
 
       <div className="act">
         <button className="btn-white" onClick={onList}>
           На биржу
         </button>
-        <ConfirmButton className="btn-sec" ask={ask} hint={fmtThin(sellValue(drop))} onConfirm={onSell}>
+        <ConfirmButton className="btn-sec" ask={ask} hint={`${fmtThin(sellValue(drop))} ₽`} onConfirm={onSell}>
           Продать
         </ConfirmButton>
         <ConfirmButton className="btn-round" ask={ask} label={`Разобрать: +${scrapValue(drop)} ₽`} onConfirm={onScrap}>

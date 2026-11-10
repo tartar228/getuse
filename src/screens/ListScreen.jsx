@@ -4,7 +4,8 @@ import { TIERS } from '../game/value.js';
 import { fairPrice, marketInfo, FEE } from '../game/market.js';
 import { speedLabel } from './ExchangeScreen.jsx';
 import { rub, rubAt, fmt, fmtDelta } from '../format.js';
-import Plate from '../components/Plate.jsx';
+import AccountCard, { Nick } from '../components/AccountCard.jsx';
+import { CardFoot } from '../components/Verdict.jsx';
 
 const PRESETS = [
   { label: '−20%', k: 0.8 },
@@ -34,12 +35,13 @@ export default function ListScreen({ drop, market, onList }) {
     <div className="screen">
       <div className={`stage tier-${drop.tier}`} style={{ '--tier': tier.color }}>
         <span className="stage-glow" aria-hidden="true" />
-        <div className="plate-wrap">
-          <Plate name={drop.name} platform={drop.platform} series={drop.series} size="lg" />
-        </div>
-      </div>
-      <div className="platform-line center">
-        {PLATFORMS[drop.platform].name} · {tier.name} · рыночная цена {rubAt(fair)}
+        <AccountCard
+          platform={drop.platform}
+          tier={drop.tier}
+          nick={<Nick text={`@${drop.name}`} />}
+          sub={`${PLATFORMS[drop.platform].name} · рыночная цена`}
+          foot={<CardFoot tier={drop.tier} price={fair} />}
+        />
       </div>
 
       <div>

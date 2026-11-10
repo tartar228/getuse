@@ -1,5 +1,5 @@
 import { PLATFORMS } from '../game/platforms.js';
-import { TIERS } from '../game/value.js';
+import { TIERS, priceOf } from '../game/value.js';
 import { POOL_WEIGHTS, POOL_NAMES } from '../game/generator.js';
 import { WORD_COUNT } from '../game/words.js';
 import stats from '../game/dropStats.json';
@@ -10,7 +10,6 @@ import { fmt, rub, fmtPct, oneIn } from '../format.js';
 export default function OddsScreen({ platform, luck = 1 }) {
   const p = PLATFORMS[platform];
   const s = stats.platforms[platform];
-  const poolTotal = POOL_WEIGHTS.reduce((a, [, w]) => a + w, 0);
 
   return (
     <div className="screen">
@@ -21,8 +20,8 @@ export default function OddsScreen({ platform, luck = 1 }) {
       <div className="card">
         <div className="card-title">Тиры</div>
         {TIERS.map((t, i) => {
-          const from = Math.round(t.min * p.priceMult);
-          const to = i + 1 < TIERS.length ? Math.round(TIERS[i + 1].min * p.priceMult) : null;
+          const from = priceOf(t.min, p);
+          const to = i + 1 < TIERS.length ? priceOf(TIERS[i + 1].min, p) : null;
           return (
             <div className="odds-row" key={t.id}>
               <span className="dot" style={{ background: t.color }} />
@@ -39,10 +38,10 @@ export default function OddsScreen({ platform, luck = 1 }) {
 
       <div className="card">
         <div className="card-title">Откуда берутся юзы</div>
-        {POOL_WEIGHTS.map(([id, w]) => (
+        {POOL_WEIGHTS.map(([id]) => (
           <div className="odds-row" key={id}>
             <span className="odds-name">{POOL_NAMES[id]}</span>
-            <span className="odds-pct">{fmtPct(w / poolTotal)}</span>
+            <span className="odds-pct">{fmtPct(s.pools[id])}</span>
           </div>
         ))}
         <p className="note">
