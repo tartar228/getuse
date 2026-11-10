@@ -15,7 +15,7 @@ export default function OddsScreen({ platform }) {
   return (
     <div className="screen">
       <h2 className="h2">
-        {p.icon} Шансы: {p.name}
+        <span className="pmark">{p.icon}</span> Шансы: {p.name}
       </h2>
 
       <div className="card">

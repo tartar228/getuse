@@ -3,6 +3,7 @@ import { TIERS } from '../game/value.js';
 import { sellValue, scrapValue } from '../game/economy.js';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { rub, rubAt } from '../format.js';
+import PlatformMark from '../components/PlatformMark.jsx';
 
 // Карточка юза из коллекции
 export default function ItemScreen({ drop, onSell, onScrap, onShare, onList }) {
@@ -10,12 +11,12 @@ export default function ItemScreen({ drop, onSell, onScrap, onShare, onList }) {
   const tier = TIERS[drop.tier];
   return (
     <div className="screen">
-      <div className="stage" style={{ '--tier': tier.color, borderColor: tier.color }}>
+      <div className={`stage tier-${drop.tier}`} style={{ '--tier': tier.color }}>
         <div className="item-name">@{drop.name}</div>
         <div className="item-platform">
-          {PLATFORMS[drop.platform].icon} {PLATFORMS[drop.platform].name}
+          <PlatformMark id={drop.platform} /> {PLATFORMS[drop.platform].name}
         </div>
-        <div className="tier-badge" style={{ background: tier.color }}>
+        <div className="tier-badge" style={{ '--tier': tier.color }}>
           {tier.name}
         </div>
         <div className="price">≈ {rubAt(drop.price)}</div>

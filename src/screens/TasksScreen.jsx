@@ -9,6 +9,7 @@ import {
 } from '../game/tasks.js';
 import { DAILY_REWARDS, rewardForStreak, bonusAvailable, formatReward } from '../game/daily.js';
 import { fmt } from '../format.js';
+import Icon from '../components/Icon.jsx';
 
 function TaskRow({ def, state, items, onClaim }) {
   const progress = progressOf(def, state, items);
@@ -58,7 +59,9 @@ export default function TasksScreen({ state, items, now, onClaim, onClaimDaily }
       {part === 'tasks' ? (
         <>
           <div className="card">
-            <div className="card-title">Ежедневный бонус · стрик {streak} 🔥</div>
+            <div className="card-title">
+              Ежедневный бонус · стрик {streak} <span className="streak-flame"><Icon name="flame" size={16} /></span>
+            </div>
             <div className="streak-days">
               {DAILY_REWARDS.map((r, i) => (
                 <div
@@ -69,7 +72,7 @@ export default function TasksScreen({ state, items, now, onClaim, onClaimDaily }
                 >
                   <b>{i + 1}</b>
                   {r.coins}
-                  {r.spins ? ` +${r.spins}🎟` : ''}
+                  {r.spins ? ` +${r.spins}` : ''}
                 </div>
               ))}
             </div>

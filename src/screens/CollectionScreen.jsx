@@ -1,6 +1,7 @@
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { rub, rubAt } from '../format.js';
+import PlatformMark from '../components/PlatformMark.jsx';
 
 export const DEFAULT_FILTER = { platform: 'all', tier: 'all', sort: 'value-desc' };
 
@@ -54,7 +55,7 @@ export default function CollectionScreen({ items, filter, onFilter, onOpen }) {
             className={filter.platform === id ? 'chip active' : 'chip'}
             onClick={() => set({ platform: id })}
           >
-            {PLATFORMS[id].icon} {PLATFORMS[id].name}
+            <PlatformMark id={id} /> {PLATFORMS[id].name}
           </button>
         ))}
       </div>
@@ -101,7 +102,7 @@ export default function CollectionScreen({ items, filter, onFilter, onOpen }) {
               <span className="dot" style={{ background: TIERS[d.tier].color }} />
               <span className="coll-name">@{d.name}</span>
               <span className="coll-meta">
-                {PLATFORMS[d.platform].icon} {rubAt(d.price)}
+                <PlatformMark id={d.platform} /> {rubAt(d.price)}
               </span>
             </button>
           ))}

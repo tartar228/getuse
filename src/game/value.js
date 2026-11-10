@@ -3,12 +3,12 @@ import { GRADE_MULT } from './analyze.js';
 // ---------- тиры ----------
 // min — нижняя граница «индекса ценности» v0 (цена без множителя платформы).
 export const TIERS = [
-  { id: 'common', name: 'Обычный', color: '#8e949c', min: 0 },
-  { id: 'uncommon', name: 'Необычный', color: '#43a047', min: 30 },
-  { id: 'rare', name: 'Редкий', color: '#1e88e5', min: 220 },
-  { id: 'epic', name: 'Эпический', color: '#8e24aa', min: 1000 },
-  { id: 'legendary', name: 'Легендарный', color: '#fb8c00', min: 3500 },
-  { id: 'mythic', name: 'Мифический', color: '#e53935', min: 12000 },
+  { id: 'common', name: 'Обычный', color: '#8b93ad', min: 0 },
+  { id: 'uncommon', name: 'Необычный', color: '#5fd38d', min: 30 },
+  { id: 'rare', name: 'Редкий', color: '#4da8ff', min: 220 },
+  { id: 'epic', name: 'Эпический', color: '#b57bff', min: 1000 },
+  { id: 'legendary', name: 'Легендарный', color: '#ff9a3c', min: 3500 },
+  { id: 'mythic', name: 'Мифический', color: '#ff5c8a', min: 12000 },
 ];
 
 export function tierOf(v0) {

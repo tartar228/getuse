@@ -1,5 +1,6 @@
 import { PLATFORMS } from '../game/platforms.js';
 import { rub, fmtDuration } from '../format.js';
+import PlatformMark from './PlatformMark.jsx';
 
 // Сводка рынка за время, пока игрока не было
 export default function SummaryModal({ summary, onClose }) {
@@ -17,7 +18,7 @@ export default function SummaryModal({ summary, onClose }) {
               {summary.sold.slice(0, 8).map((s, i) => (
                 <div className="stat-row" key={i}>
                   <span>
-                    {PLATFORMS[s.platform].icon} @{s.name}
+                    <PlatformMark id={s.platform} /> @{s.name}
                   </span>
                   <b>+{rub(s.price)}</b>
                 </div>

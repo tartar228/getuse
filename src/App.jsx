@@ -9,12 +9,12 @@ import ExchangeScreen from './screens/ExchangeScreen.jsx';
 import LotScreen from './screens/LotScreen.jsx';
 import ListScreen from './screens/ListScreen.jsx';
 import SummaryModal from './components/SummaryModal.jsx';
+import Icon from './components/Icon.jsx';
 import { rollDrop } from './game/generator.js';
 import { hydrate } from './game/appraise.js';
 import { initialState, reducer } from './state/game.js';
 import { loadState, saveState, flushNow } from './state/persist.js';
 import { shareDrop } from './share.js';
-import { APP_TITLE } from './config.js';
 import { backButton, haptic, isTelegram } from './telegram.js';
 import { rub, fmtAt, fmtTime } from './format.js';
 import { FREE_CAP, nextSpinIn, buyPrice } from './game/spins.js';
@@ -22,11 +22,11 @@ import { claimableCount } from './game/tasks.js';
 import { bonusAvailable } from './game/daily.js';
 
 const TABS = [
-  { id: 'spin', label: 'Крутить', icon: '🎰' },
-  { id: 'collection', label: 'Коллекция', icon: '🗂' },
-  { id: 'market', label: 'Биржа', icon: '📈' },
-  { id: 'tasks', label: 'Задания', icon: '✅' },
-  { id: 'profile', label: 'Профиль', icon: '👤' },
+  { id: 'spin', label: 'Крутить', icon: 'spin' },
+  { id: 'collection', label: 'Коллекция', icon: 'collection' },
+  { id: 'market', label: 'Биржа', icon: 'market' },
+  { id: 'tasks', label: 'Задания', icon: 'tasks' },
+  { id: 'profile', label: 'Профиль', icon: 'profile' },
 ];
 
 export default function App() {
@@ -100,7 +100,11 @@ export default function App() {
   const onRevealed = useCallback(() => {
     if (!state.pending) return;
     setRevealedId(state.pending.id);
-    if (pendingDrop.tier >= 3) haptic.success();
+    if (pendingDrop.tier >= 4) {
+      haptic.thud();
+      setTimeout(haptic.success, 160);
+      if (pendingDrop.tier >= 5) setTimeout(haptic.thud, 320);
+    } else if (pendingDrop.tier >= 3) haptic.success();
     else haptic.thud();
   }, [state.pending, pendingDrop]);
 
@@ -268,16 +272,21 @@ export default function App() {
       <header className="topbar">
         {!isTelegram && canGoBack && (
           <button className="back" onClick={goBack} aria-label="Назад">
-            ←
+            <Icon name="back" size={20} />
           </button>
         )}
-        <div className="title">{APP_TITLE}</div>
+        <div className="title">
+          Get<span>Use</span>
+        </div>
         <div className="balance">
           <span title="Баланс">
             {rub(state.coins)} <small className="at">{fmtAt(state.coins)}</small>
           </span>
           <span title="Крутки">
-            🎟 {state.spins}
+            <span className="spin-icon">
+              <Icon name="ticket" size={16} />
+            </span>{" "}
+            {state.spins}
             {state.spins < FREE_CAP && <small className="timer">/{FREE_CAP}</small>}
             {nextIn !== null && <small className="timer"> · {fmtTime(nextIn)}</small>}
           </span>
@@ -297,7 +306,9 @@ export default function App() {
             className={t.id === tab && !view ? 'tab active' : 'tab'}
             onClick={() => openTab(t.id)}
           >
-            <span className="tab-icon">{t.icon}</span>
+            <span className="tab-icon">
+              <Icon name={t.icon} />
+            </span>
             <span className="tab-label">{t.label}</span>
             {t.id === 'tasks' && badge > 0 && <span className="badge">{badge}</span>}
             {t.id === 'market' && market && market.offers.length > 0 && (

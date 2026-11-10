@@ -6,7 +6,7 @@ export const PLATFORMS = {
   telegram: {
     id: 'telegram',
     name: 'Telegram',
-    icon: '✈️',
+    icon: 'TG',
     prefix: '@',
     priceMult: 1.25,
     minLen: 3,
@@ -19,7 +19,7 @@ export const PLATFORMS = {
   tiktok: {
     id: 'tiktok',
     name: 'TikTok',
-    icon: '🎵',
+    icon: 'TT',
     prefix: '@',
     priceMult: 1.0,
     minLen: 2,
@@ -32,7 +32,7 @@ export const PLATFORMS = {
   instagram: {
     id: 'instagram',
     name: 'Instagram',
-    icon: '📷',
+    icon: 'IG',
     prefix: '@',
     priceMult: 1.15,
     minLen: 2,
@@ -45,7 +45,7 @@ export const PLATFORMS = {
   x: {
     id: 'x',
     name: 'X (Twitter)',
-    icon: '𝕏',
+    icon: 'X',
     prefix: '@',
     priceMult: 1.1,
     minLen: 4,
@@ -58,7 +58,7 @@ export const PLATFORMS = {
   youtube: {
     id: 'youtube',
     name: 'YouTube',
-    icon: '▶️',
+    icon: 'YT',
     prefix: '@',
     priceMult: 0.9,
     minLen: 3,

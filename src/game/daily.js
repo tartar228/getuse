@@ -36,9 +36,17 @@ export function touchVisit(state, now) {
 export const bonusAvailable = (state, now) =>
   state.daily.visitDay === dayKey(now) && state.daily.bonusDay !== dayKey(now);
 
+const spinWord = (n) => {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return 'крутка';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return 'крутки';
+  return 'круток';
+};
+
 export function formatReward(r) {
   const parts = [];
   if (r.coins) parts.push(`${r.coins.toLocaleString('ru-RU')} ₽`);
-  if (r.spins) parts.push(`${r.spins} 🎟`);
+  if (r.spins) parts.push(`${r.spins} ${spinWord(r.spins)}`);
   return parts.join(' + ');
 }

@@ -4,6 +4,7 @@ import { TIERS } from '../game/value.js';
 import { fairPrice, marketInfo, FEE } from '../game/market.js';
 import { speedLabel } from './ExchangeScreen.jsx';
 import { rub, rubAt, fmt, fmtDelta } from '../format.js';
+import PlatformMark from '../components/PlatformMark.jsx';
 
 const PRESETS = [
   { label: '−20%', k: 0.8 },
@@ -31,10 +32,10 @@ export default function ListScreen({ drop, market, onList }) {
 
   return (
     <div className="screen">
-      <div className="stage" style={{ '--tier': tier.color, borderColor: tier.color }}>
+      <div className={`stage tier-${drop.tier}`} style={{ '--tier': tier.color }}>
         <div className="item-name">@{drop.name}</div>
         <div className="item-platform">
-          {PLATFORMS[drop.platform].icon} {PLATFORMS[drop.platform].name} · {tier.name}
+          <PlatformMark id={drop.platform} /> {PLATFORMS[drop.platform].name} · {tier.name}
         </div>
         <div className="price">Рыночная цена: {rubAt(fair)}</div>
       </div>

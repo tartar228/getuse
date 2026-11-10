@@ -3,6 +3,7 @@ import { TIERS } from '../game/value.js';
 import { fairPrice, saleChance, currentIndex, FEE } from '../game/market.js';
 import Sparkline from '../components/Sparkline.jsx';
 import { rubAt, rub, fmtDelta, fmtDuration } from '../format.js';
+import PlatformMark from '../components/PlatformMark.jsx';
 
 const PARTS = [
   { id: 'feed', label: 'Лента' },
@@ -31,7 +32,7 @@ function Feed({ m, filter, onFilter, onOpenLot }) {
         </button>
         {PLATFORM_ORDER.map((id) => (
           <button key={id} className={filter === id ? 'chip active' : 'chip'} onClick={() => onFilter(id)}>
-            {PLATFORMS[id].icon} {PLATFORMS[id].name}
+            <PlatformMark id={id} /> {PLATFORMS[id].name}
           </button>
         ))}
       </div>
@@ -47,7 +48,7 @@ function Feed({ m, filter, onFilter, onOpenLot }) {
                 <span className="lot-main">
                   <span className="coll-name">@{l.name}</span>
                   <span className="lot-seller">
-                    {PLATFORMS[l.platform].icon} {l.seller}
+                    <PlatformMark id={l.platform} /> {l.seller}
                   </span>
                 </span>
                 <span className="lot-price">
@@ -84,7 +85,7 @@ function Mine({ m, now, onUnlist, onGoCollection }) {
                 <span className="lot-main">
                   <span className="coll-name">@{l.name}</span>
                   <span className="lot-seller">
-                    {PLATFORMS[l.platform].icon} на бирже {fmtDuration(now - (l.at || now))} · {speedLabel(l.ask, fair, l.tier)}
+                    <PlatformMark id={l.platform} /> на бирже {fmtDuration(now - (l.at || now))} · {speedLabel(l.ask, fair, l.tier)}
                   </span>
                 </span>
                 <span className="lot-price">
@@ -105,7 +106,7 @@ function Mine({ m, now, onUnlist, onGoCollection }) {
           {m.log.slice(0, 8).map((x, i) => (
             <div className="stat-row" key={i}>
               <span>
-                {PLATFORMS[x.platform].icon} @{x.name} → {x.buyer}
+                <PlatformMark id={x.platform} /> @{x.name} → {x.buyer}
               </span>
               <b>+{rub(x.price)}</b>
             </div>
@@ -125,7 +126,7 @@ function Offers({ m, now, onAccept, onDecline }) {
       {m.offers.map((o) => (
         <div className="task" key={o.id}>
           <div className="task-title">
-            За @{o.name} {PLATFORMS[o.platform].icon} предлагают {rubAt(o.price)}
+            За @{o.name} <PlatformMark id={o.platform} /> предлагают {rubAt(o.price)}
           </div>
           <div className="task-reward">
             {o.buyer} · действует ещё {fmtDuration(o.until - now)}

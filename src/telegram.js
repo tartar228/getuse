@@ -14,12 +14,21 @@ const atLeast = (v) => {
   }
 };
 
+const PAGE_COLOR = '#0b0e1a';
+const SURFACE_COLOR = '#131830';
+
 export function initTelegram() {
   if (!tg) return;
   try {
     tg.ready();
     tg.expand();
     if (atLeast('7.7')) tg.disableVerticalSwipes();
+    // фирменная тёмная тема: шапка, фон и нижняя панель Telegram под цвет игры
+    if (atLeast('6.1')) {
+      tg.setHeaderColor(PAGE_COLOR);
+      tg.setBackgroundColor(PAGE_COLOR);
+    }
+    if (atLeast('7.10')) tg.setBottomBarColor(SURFACE_COLOR);
   } catch {
     /* старые клиенты */
   }

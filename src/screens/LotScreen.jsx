@@ -3,6 +3,7 @@ import { TIERS } from '../game/value.js';
 import { fairPrice } from '../game/market.js';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { rub, rubAt, fmtDelta } from '../format.js';
+import PlatformMark from '../components/PlatformMark.jsx';
 
 // Лот NPC-продавца: можно купить
 export default function LotScreen({ lot, drop, market, coins, onBuy }) {
@@ -24,12 +25,12 @@ export default function LotScreen({ lot, drop, market, coins, onBuy }) {
   const ratio = lot.ask / fair;
   return (
     <div className="screen">
-      <div className="stage" style={{ '--tier': tier.color, borderColor: tier.color }}>
+      <div className={`stage tier-${lot.tier}`} style={{ '--tier': tier.color }}>
         <div className="item-name">@{lot.name}</div>
         <div className="item-platform">
-          {PLATFORMS[lot.platform].icon} {PLATFORMS[lot.platform].name} · продаёт {lot.seller}
+          <PlatformMark id={lot.platform} /> {PLATFORMS[lot.platform].name} · продаёт {lot.seller}
         </div>
-        <div className="tier-badge" style={{ background: tier.color }}>
+        <div className="tier-badge" style={{ '--tier': tier.color }}>
           {tier.name}
         </div>
         <div className="price">{rubAt(lot.ask)}</div>

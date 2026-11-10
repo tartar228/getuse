@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import SlotReveal from '../components/SlotReveal.jsx';
+import PlatformMark from '../components/PlatformMark.jsx';
+import DropEffects from '../components/DropEffects.jsx';
 import PriceBreakdown from '../components/PriceBreakdown.jsx';
 import { PLATFORMS, PLATFORM_ORDER } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
@@ -24,6 +26,7 @@ export default function SpinScreen({
   onBuy,
 }) {
   const [skipKey, setSkipKey] = useState(0);
+  const [fxId, setFxId] = useState(null);
   const p = PLATFORMS[platform];
   const drop = current?.drop;
   const revealing = Boolean(current && !current.revealed);
@@ -42,7 +45,7 @@ export default function SpinScreen({
             disabled={Boolean(current)}
             onClick={() => onPlatform(id)}
           >
-            <span className="chip-icon">{PLATFORMS[id].icon}</span>
+            <PlatformMark id={id} />
             {PLATFORMS[id].name}
           </button>
         ))}
@@ -62,15 +65,22 @@ export default function SpinScreen({
             tier={drop.tier}
             instant={decided}
             skipKey={skipKey}
-            onDone={onRevealed}
+            onDone={() => {
+              setFxId(drop.id);
+              onRevealed();
+            }}
           />
         ) : (
           <div className="slot idle">@?????</div>
         )}
 
+        {decided && fxId === drop.id && (
+          <DropEffects key={`fx-${drop.id}`} tier={drop.tier} color={tier.color} playId={drop.id} />
+        )}
+
         {decided && (
           <div className="result">
-            <div className="tier-badge" style={{ background: tier.color }}>
+            <div className="tier-badge" style={{ '--tier': tier.color }}>
               {tier.name}
             </div>
             <div className="price">≈ {rubAt(drop.price)}</div>

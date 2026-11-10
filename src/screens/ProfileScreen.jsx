@@ -1,6 +1,7 @@
 import { PLATFORMS } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { rub, rubAt } from '../format.js';
+import PlatformMark from '../components/PlatformMark.jsx';
 
 // Профиль: витрина из 3 лучших юзов, стоимость коллекции и статистика
 export default function ProfileScreen({ items, coins, lifetime, onOpen, onShare }) {
@@ -27,7 +28,7 @@ export default function ProfileScreen({ items, coins, lifetime, onOpen, onShare 
               <span className="show-place">{i + 1}</span>
               <span className="show-name">@{d.name}</span>
               <span className="show-meta">
-                {PLATFORMS[d.platform].icon} {TIERS[d.tier].name}
+                <PlatformMark id={d.platform} /> {TIERS[d.tier].name}
               </span>
               <span className="show-price">{rubAt(d.price)}</span>
             </button>
