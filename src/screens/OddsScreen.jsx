@@ -7,7 +7,7 @@ import { fmt, rub, fmtPct, oneIn } from '../format.js';
 
 // Шансы тиров взяты из симуляции (npm run stats), а не посчитаны на глаз:
 // тир зависит от итоговой ценности юза, поэтому аналитически их не выписать.
-export default function OddsScreen({ platform }) {
+export default function OddsScreen({ platform, luck = 1 }) {
   const p = PLATFORMS[platform];
   const s = stats.platforms[platform];
   const poolTotal = POOL_WEIGHTS.reduce((a, [, w]) => a + w, 0);
@@ -46,11 +46,17 @@ export default function OddsScreen({ platform }) {
           </div>
         ))}
         <p className="note">
-          Паттерны: повторы, палиндромы, лесенки. Слова: словарь на {WORD_COUNT} слов.
+          Паттерны: повторы, палиндромы, лесенки. Слова: оцениваем по словарю на {WORD_COUNT} слов.
           Цена зависит от длины, слова, чистоты, паттерна и платформы (×{p.priceMult}).
         </p>
       </div>
 
+      <p className="note">
+        Это шансы без удачи. Удача ×L делает floor(L) попыток и оставляет лучшую, а с шансом дробной части ещё одну.
+        {luck > 1
+          ? ` У тебя сейчас ×${luck.toFixed(2)}: редкие юзы выпадают примерно в ${luck.toFixed(1)} раза чаще.`
+          : ' Сейчас удача ×1.00: назначь талисманы в коллекции, и она вырастет.'}
+      </p>
       <p className="note">
         Шансы посчитаны симуляцией на {fmt(stats.samples)} круток для этой платформы. Средняя цена
         юза — {rub(s.avgPrice)}.

@@ -3,7 +3,7 @@ import { WORD_GRADE, WORD_CAT, MAX_WORD_LEN } from './words.js';
 // Множитель цены слова по градации словаря
 export const GRADE_MULT = { 1: 3, 2: 8, 3: 20 };
 
-const CAT_PRIORITY = { word: 0, name: 1, pop: 2, meme: 3, star: 4 };
+const CAT_PRIORITY = { word: 0, biz: 1, name: 1, pop: 2, meme: 3, star: 4 };
 
 // Разбор готового юза: длина, слова, чистота, паттерны.
 // Ценность считается по результату разбора, а не по тому, как юз был сгенерирован:

@@ -4,6 +4,7 @@ import App from './App.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import { initTelegram } from './telegram.js';
 import { APP_TITLE } from './config.js';
+import './theme.css';
 import './styles.css';
 
 initTelegram();

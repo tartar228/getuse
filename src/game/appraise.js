@@ -7,9 +7,10 @@ import { PLATFORMS } from './platforms.js';
 // и цены автоматически подтягиваются, если формулу ценности поправят.
 export function appraise(name, platformId) {
   const v = valuate(analyze(name), PLATFORMS[platformId]);
-  return { tier: v.tier, price: v.price, v0: v.v0, tags: v.tags, breakdown: v.breakdown };
+  return { tier: v.tier, price: v.price, v0: v.v0, tags: v.tags, breakdown: v.breakdown, series: v.series };
 }
 
 export const hydrate = (raw) => ({ ...raw, ...appraise(raw.name, raw.platform) });
 
-export const toRaw = (d) => ({ id: d.id, name: d.name, platform: d.platform, ts: d.ts });
+// no — порядковый номер крутки (для подписи «№ 1 234»)
+export const toRaw = (d) => (d.no ? { id: d.id, name: d.name, platform: d.platform, ts: d.ts, no: d.no } : { id: d.id, name: d.name, platform: d.platform, ts: d.ts });

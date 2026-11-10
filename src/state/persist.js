@@ -6,17 +6,17 @@ import { PLATFORM_ORDER } from '../game/platforms.js';
 //
 // В CloudStorage значение ограничено 4096 символами, поэтому состояние режется на ключи:
 //   meta       — всё, кроме коллекции и рынка, + число кусков каждого вида
-//   inv0..invN — коллекция, по INV_CHUNK юзов в виде [id, name, индекс платформы, ts]
+//   inv0..invN — коллекция, по INV_CHUNK юзов в виде [id, name, индекс платформы, ts, номер крутки]
 //   mk0..mkN   — состояние биржи (JSON), нарезанное по MK_CHUNK символов
 // Индекс платформы — позиция в PLATFORM_ORDER, порядок менять нельзя.
 
 const LS_KEY = 'getuse_state_v1';
-const INV_CHUNK = 60;
+const INV_CHUNK = 40;
 const MK_CHUNK = 3500;
 const FLUSH_DELAY = 1000;
 
-const pack = (c) => [c.id, c.name, PLATFORM_ORDER.indexOf(c.platform), c.ts];
-const unpack = ([id, name, pi, ts]) => ({ id, name, platform: PLATFORM_ORDER[pi], ts });
+const pack = (c) => [c.id, c.name, PLATFORM_ORDER.indexOf(c.platform), c.ts, c.no || 0];
+const unpack = ([id, name, pi, ts, no]) => (no ? { id, name, platform: PLATFORM_ORDER[pi], ts, no } : { id, name, platform: PLATFORM_ORDER[pi], ts });
 
 // Состояние → набор ключей {имя: строка}
 function split(state) {

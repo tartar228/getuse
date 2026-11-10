@@ -1,12 +1,13 @@
+import Plate from '../components/Plate.jsx';
+import PriceBreakdown from '../components/PriceBreakdown.jsx';
+import { Rarity, Mods } from '../components/Verdict.jsx';
 import { PLATFORMS } from '../game/platforms.js';
 import { TIERS } from '../game/value.js';
 import { fairPrice } from '../game/market.js';
-import PriceBreakdown from '../components/PriceBreakdown.jsx';
-import { rub, rubAt, fmtDelta } from '../format.js';
-import PlatformMark from '../components/PlatformMark.jsx';
+import { rub, fmtAt, fmtDelta, fmtThin } from '../format.js';
 
 // Лот NPC-продавца: можно купить
-export default function LotScreen({ lot, drop, market, coins, onBuy }) {
+export default function LotScreen({ lot, drop, market, coins, free, onBuy }) {
   if (!lot) {
     return (
       <div className="screen">
@@ -23,29 +24,44 @@ export default function LotScreen({ lot, drop, market, coins, onBuy }) {
     short: lot.name.length <= 4,
   });
   const ratio = lot.ask / fair;
+  const poor = coins < lot.ask;
   return (
     <div className="screen">
       <div className={`stage tier-${lot.tier}`} style={{ '--tier': tier.color }}>
-        <div className="item-name">@{lot.name}</div>
-        <div className="item-platform">
-          <PlatformMark id={lot.platform} /> {PLATFORMS[lot.platform].name} · продаёт {lot.seller}
+        <span className="stage-glow" aria-hidden="true" />
+        <div className="plate-wrap">
+          <Plate name={lot.name} platform={lot.platform} series={drop?.series} size="lg" />
         </div>
-        <div className="tier-badge" style={{ '--tier': tier.color }}>
-          {tier.name}
-        </div>
-        <div className="price">{rubAt(lot.ask)}</div>
-        <div className="item-platform">
-          рыночная цена сейчас {rub(fair)} ·{' '}
-          <span className={ratio <= 1 ? 'mult up' : 'mult down'}>{fmtDelta(ratio)}</span>
-        </div>
-        {drop && <PriceBreakdown breakdown={drop.breakdown} />}
       </div>
-      <button className="btn primary big" onClick={onBuy} disabled={coins < lot.ask}>
-        {coins < lot.ask ? `Не хватает ${rub(lot.ask - coins)}` : `Купить за ${rub(lot.ask)}`}
+      <div className="verdict">
+        <div className="result">
+          <Rarity tier={lot.tier} />
+          <div className="price-xl">
+            {fmtThin(lot.ask)}
+            <span className="cur"> ₽</span>
+          </div>
+          <div className="price-at">≈ {fmtAt(lot.ask)}</div>
+          <div className="platform-line">
+            {PLATFORMS[lot.platform].name} · продаёт {lot.seller}
+          </div>
+          <div className="platform-line">
+            рыночная цена сейчас {rub(fair)} · <span className={ratio <= 1 ? 'mult up' : 'mult down'}>{fmtDelta(ratio)}</span>
+          </div>
+          {drop && <Mods breakdown={drop.breakdown} />}
+        </div>
+      </div>
+      <button className="btn-white big" onClick={onBuy} disabled={poor || free <= 0}>
+        {free <= 0 ? 'Нет свободных мест' : poor ? `Не хватает ${rub(lot.ask - coins)}` : `Купить за ${rub(lot.ask)}`}
       </button>
       <p className="note">
-        Юз попадёт в коллекцию. Дальше его можно выставить на биржу по своей цене, комиссия при продаже 5%.
+        Юз попадёт в коллекцию (нужно свободное место). Дальше его можно выставить на биржу по своей цене, комиссия при продаже 5%.
       </p>
+      {drop && (
+        <div>
+          <div className="overline">Из чего цена</div>
+          <PriceBreakdown breakdown={drop.breakdown} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,141 @@
+/* GetUse: тема. Все цвета, радиусы, отступы, шрифты и тени живут здесь, компоненты берут только переменные.
+   Стиль: почти чёрный «дорогой» интерфейс, белая главная кнопка, цвет только точечно (редкость, молния, множители).
+   Цвет конкретной редкости приходит в --tier (из game/value.js). */
+
+@font-face {
+  font-family: 'Unbounded';
+  font-weight: 800;
+  font-display: swap;
+  src: url('./fonts/unbounded-cyrillic-800-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Unbounded';
+  font-weight: 800;
+  font-display: swap;
+  src: url('./fonts/unbounded-latin-800-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 700;
+  font-display: swap;
+  src: url('./fonts/jetbrains-mono-latin-700-normal.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-weight: 800;
+  font-display: swap;
+  src: url('./fonts/jetbrains-mono-latin-800-normal.woff2') format('woff2');
+}
+
+:root {
+  color-scheme: dark;
+
+  /* поверхности */
+  --bg: #0b0c0e;
+  --surface: #161618;
+  --surface-2: #1f1f22;
+  --surface-3: #2a2a2d;
+  --border: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --glow: rgba(120, 140, 190, 0.1);
+
+  /* текст */
+  --text: #ffffff;
+  --text-2: #8e8e93;
+  --text-3: #5a5a5f;
+
+  /* акценты */
+  --energy: #f5c518; /* молния: крутки и энергия, наш янтарный */
+  --mult: #4d7cff; /* множители и ссылки */
+  --up: #34c759;
+  --down: #ff453a;
+  --badge: #ff3b30;
+  --tier: var(--text-2);
+
+  /* кнопка */
+  --on-white: #0b0c0e;
+
+  /* радиусы */
+  --r-card: 20px;
+  --r-sheet: 24px;
+  --r-plate: 6px;
+  --r-pill: 999px;
+
+  /* отступы: шаг 4 */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+
+  /* шрифты */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, system-ui, sans-serif;
+  --font-display: 'Unbounded', 'SF Pro Display', var(--font);
+  --font-plate: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* тени, анимация */
+  --shadow-plate: 0 6px 18px rgba(0, 0, 0, 0.45);
+  --shadow-sheet: 0 -20px 60px rgba(0, 0, 0, 0.6);
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  /* безопасные зоны: Telegram в полноэкранном режиме заполняет --tg-* сам */
+  --safe-top: calc(env(safe-area-inset-top, 0px) + var(--tg-safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--tg-safe-area-inset-bottom, 0px));
+
+  /* плашки особых серий: фон, текст, рамка */
+  --series-red: #c8312b;
+  --series-blue: #2b62c8;
+  --series-yellow: #f2c230;
+  --series-black: #141416;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--mult);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+}

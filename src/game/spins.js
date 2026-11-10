@@ -1,29 +1,37 @@
 import { SPIN_COST } from './economy.js';
+import { BASE_CAP, BASE_INTERVAL, levelOf, capAt, intervalAt } from './levels.js';
 
 // Бесплатные крутки копятся по таймеру: 1 за 5 минут, запас до 20.
+// Уровни ускоряют таймер и увеличивают запас (см. levels.js).
 // Купленные крутки могут превышать запас — они не сгорают.
-export const FREE_INTERVAL = 5 * 60 * 1000;
-export const FREE_CAP = 20;
+export const FREE_INTERVAL = BASE_INTERVAL;
+export const FREE_CAP = BASE_CAP;
 export const START_SPINS = 10;
+
+const levelNow = (state) => levelOf(state.xp).level;
+export const capOf = (state) => capAt(levelNow(state));
+export const intervalOf = (state) => intervalAt(levelNow(state));
 
 // Докручиваем накопленные крутки. Возвращает тот же объект, если ничего не изменилось.
 export function refill(state, now) {
-  if (state.spins >= FREE_CAP) return state;
+  const cap = capOf(state);
+  if (state.spins >= cap) return state;
   if (!state.spinsAt) return { ...state, spinsAt: now };
-  const gained = Math.floor((now - state.spinsAt) / FREE_INTERVAL);
+  const interval = intervalOf(state);
+  const gained = Math.floor((now - state.spinsAt) / interval);
   if (gained <= 0) return state;
-  const spins = Math.min(FREE_CAP, state.spins + gained);
+  const spins = Math.min(cap, state.spins + gained);
   return {
     ...state,
     spins,
-    spinsAt: spins >= FREE_CAP ? now : state.spinsAt + gained * FREE_INTERVAL,
+    spinsAt: spins >= cap ? now : state.spinsAt + gained * interval,
   };
 }
 
 // Сколько мс до следующей бесплатной крутки (null, если запас полон)
 export function nextSpinIn(state, now) {
-  if (state.spins >= FREE_CAP || !state.spinsAt) return null;
-  return Math.max(0, state.spinsAt + FREE_INTERVAL - now);
+  if (state.spins >= capOf(state) || !state.spinsAt) return null;
+  return Math.max(0, state.spinsAt + intervalOf(state) - now);
 }
 
 // Цена покупных круток растёт при частых покупках и восстанавливается со временем:

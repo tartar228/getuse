@@ -14,8 +14,14 @@ const atLeast = (v) => {
   }
 };
 
-const PAGE_COLOR = '#0b0e1a';
-const SURFACE_COLOR = '#131830';
+const PAGE_COLOR = '#0b0c0e';
+const SURFACE_COLOR = '#161618';
+
+// На телефонах открываем игру на весь экран без плашки Telegram сверху (Bot API 8.0+).
+// На компьютере оставляем обычное окно. Отступы под кнопки Telegram и вырез экрана клиент
+// отдаёт сам в CSS-переменных --tg-safe-area-inset-* и --tg-content-safe-area-inset-*,
+// их использует theme.css (--safe-top, --safe-bottom).
+const MOBILE = new Set(['ios', 'android', 'android_x']);
 
 export function initTelegram() {
   if (!tg) return;
@@ -29,10 +35,17 @@ export function initTelegram() {
       tg.setBackgroundColor(PAGE_COLOR);
     }
     if (atLeast('7.10')) tg.setBottomBarColor(SURFACE_COLOR);
+    if (atLeast('8.0') && MOBILE.has(tg.platform) && !tg.isFullscreen) tg.requestFullscreen();
   } catch {
     /* старые клиенты */
   }
 }
+
+// Первая буква имени для аватара в таб-баре
+export const userInitial = () => {
+  const name = tg?.initDataUnsafe?.user?.first_name || tg?.initDataUnsafe?.user?.username || '';
+  return name ? [...name][0].toUpperCase() : 'G';
+};
 
 // ---------- кнопка «Назад» ----------
 let backHandler = null;

@@ -2,6 +2,12 @@ import { CURRENCY, AT_RATE } from './game/economy.js';
 
 export const fmt = (n) => Math.round(n).toLocaleString('ru-RU');
 
+// Разряды через узкий неразрывный пробел: 15 000
+export const fmtThin = (n) => fmt(n).replace(/\s/g, '\u202f');
+
+// Удача: ×1.00, ×1.23
+export const fmtLuck = (l) => `×${l.toFixed(2)}`;
+
 // @: меньше 10 — с одним знаком (0.2 @), иначе целое
 export function fmtAt(rub) {
   const v = rub / AT_RATE;

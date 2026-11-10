@@ -1,3 +1,5 @@
+import { EXTRA } from './words-extra.js';
+
 // Словарь для юзов. Три градации крутости:
 //   1 — обычные слова, 2 — крутые/сленг/эстетика, 3 — топовые.
 // Если слово есть в нескольких списках, побеждает более высокая градация.
@@ -113,6 +115,20 @@ mario luigi zelda link pikachu goku naruto batman joker yoda vader shrek elsa so
 morpheus gandalf frodo hulk thanos ironman
 `;
 
+
+// Ключевые слова: то, за что платят владельцы каналов и брендов (новости, путешествия, крипта, ставки,
+// магазины, работа). Цена за ключевик выше, чем за обычное слово.
+const BIZ = `
+news travel crypto bitcoin casino poker bet betting forex trade trader trading invest loan credit bank store market
+deal sale promo coupon discount vpn hosting domain ads marketing agency studio design tech media radio games gaming
+esports fitness health medical pharma beauty fashion food recipe jobs career remote freelance courses learn law legal
+insurance estate realty rent cars auto taxi delivery finance wallet stock stocks nft token defi mining airdrop signals
+bonus cashback giveaway lottery jackpot slots bingo dating anime movies cinema sport football soccer tennis hockey
+boxing daily global official support help info service premium vip elite luxury shop money cash gold diamond startup
+venture capital fund pay payment bills tax tour hotel flights ticket tickets booking cafe gym yoga salon barber tattoo
+dental clinic lawyer academy college university exam tutor english china japan korea
+`;
+
 const parse = (s) => s.split(/\s+/).filter((w) => /^[a-z]{3,}$/.test(w));
 
 // Порядок важен: при повторе побеждает более высокая градация,
@@ -121,6 +137,7 @@ const LISTS = [
   { grade: 1, cat: 'word', list: GRADE_1 },
   { grade: 2, cat: 'word', list: GRADE_2 },
   { grade: 3, cat: 'word', list: GRADE_3 },
+  { grade: 2, cat: 'biz', list: BIZ },
   { grade: 2, cat: 'name', list: NAMES },
   { grade: 2, cat: 'meme', list: MEMES },
   { grade: 3, cat: 'meme', list: MEMES_TOP },
@@ -140,11 +157,19 @@ for (const { grade, cat, list } of LISTS) {
 }
 
 // «Корзины» для генератора: у каждой свой шанс при выборе слова
-export const BUCKETS = { w1: [], w2: [], w3: [], name: [], meme: [], star: [], pop: [] };
+export const BUCKETS = { w1: [], w2: [], w3: [], biz: [], name: [], meme: [], star: [], pop: [] };
 for (const w of Object.keys(WORD_GRADE)) {
   const c = WORD_CAT[w];
   if (c === 'word') BUCKETS[`w${WORD_GRADE[w]}`].push(w);
   else BUCKETS[c].push(w);
+}
+
+// Расширенный словарь: только для оценки, в «корзины» дропа не попадает
+for (const w of parse(EXTRA)) {
+  if (!(w in WORD_GRADE)) {
+    WORD_GRADE[w] = 1;
+    WORD_CAT[w] = 'word';
+  }
 }
 
 export const WORD_COUNT = Object.keys(WORD_GRADE).length;

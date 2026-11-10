@@ -58,7 +58,7 @@ function purityRows(a) {
 }
 
 // Дополнительный множитель категории слова: известные ники и мемы ценятся выше обычных слов
-const CAT_BONUS = { word: 1, name: 1.1, pop: 1.2, meme: 1.25, star: 1.5 };
+const CAT_BONUS = { word: 1, biz: 1.3, name: 1.1, pop: 1.2, meme: 1.25, star: 1.5 };
 
 function wordMult(a) {
   if (!a.word) return 1;
@@ -151,7 +151,20 @@ export function valuate(a, platform) {
     parts,
     breakdown: { base: Math.round(parts.length), len: a.len, rows },
     tags: describe(a, platform),
+    series: seriesOf(a, platform),
   };
+}
+
+// Особая серия: цвет плашки юза. Красная: коллекционные короткие, синяя: известные ники,
+// жёлтая: мемы, чёрная: юзы-паттерны (повтор, палиндром, цикл, полная лесенка).
+function seriesOf(a, platform) {
+  if (platform.id === 'telegram' ? a.len < 5 : a.len <= 3) return 'red';
+  if (a.word?.cat === 'star' && a.word.cov >= 0.6) return 'blue';
+  if (a.word?.cat === 'meme' && a.word.cov >= 0.6) return 'yellow';
+  if (a.patterns.some((p) => p.type === 'mono' || p.type === 'cycle' || p.type === 'palindrome' || (p.type === 'ladder' && p.full))) {
+    return 'black';
+  }
+  return null;
 }
 
 // ---------- человекочитаемые теги ----------
@@ -163,7 +176,7 @@ const PATTERN_NAMES = {
   ladder: 'Лесенка',
 };
 const GRADE_LABEL = { 1: 'Слово', 2: 'Крутое слово', 3: 'Топ-слово' };
-const CAT_LABEL = { name: 'Имя', pop: 'Поп-культура', meme: 'Мем', star: 'Известный ник' };
+const CAT_LABEL = { biz: 'Ключевое слово', name: 'Имя', pop: 'Поп-культура', meme: 'Мем', star: 'Известный ник' };
 
 function describe(a, platform) {
   const tags = [];

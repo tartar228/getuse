@@ -4,7 +4,7 @@ import { TIERS } from '../game/value.js';
 import { fairPrice, marketInfo, FEE } from '../game/market.js';
 import { speedLabel } from './ExchangeScreen.jsx';
 import { rub, rubAt, fmt, fmtDelta } from '../format.js';
-import PlatformMark from '../components/PlatformMark.jsx';
+import Plate from '../components/Plate.jsx';
 
 const PRESETS = [
   { label: '−20%', k: 0.8 },
@@ -33,15 +33,17 @@ export default function ListScreen({ drop, market, onList }) {
   return (
     <div className="screen">
       <div className={`stage tier-${drop.tier}`} style={{ '--tier': tier.color }}>
-        <div className="item-name">@{drop.name}</div>
-        <div className="item-platform">
-          <PlatformMark id={drop.platform} /> {PLATFORMS[drop.platform].name} · {tier.name}
+        <span className="stage-glow" aria-hidden="true" />
+        <div className="plate-wrap">
+          <Plate name={drop.name} platform={drop.platform} series={drop.series} size="lg" />
         </div>
-        <div className="price">Рыночная цена: {rubAt(fair)}</div>
+      </div>
+      <div className="platform-line center">
+        {PLATFORMS[drop.platform].name} · {tier.name} · рыночная цена {rubAt(fair)}
       </div>
 
-      <div className="card">
-        <div className="card-title">Твоя цена, ₽</div>
+      <div>
+        <div className="overline">Твоя цена, ₽</div>
         <input
           className="input"
           inputMode="numeric"
@@ -77,7 +79,7 @@ export default function ListScreen({ drop, market, onList }) {
         </p>
       </div>
 
-      <button className="btn primary big" disabled={!valid} onClick={() => onList(ask)}>
+      <button className="btn-white big" disabled={!valid} onClick={() => onList(ask)}>
         {valid ? `Выставить за ${fmt(ask)} ₽` : 'Введи цену'}
       </button>
     </div>

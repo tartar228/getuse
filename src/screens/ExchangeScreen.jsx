@@ -65,7 +65,7 @@ function Feed({ m, filter, onFilter, onOpenLot }) {
   );
 }
 
-function Mine({ m, now, onUnlist, onGoCollection }) {
+function Mine({ m, now, free, onUnlist, onGoCollection }) {
   return (
     <>
       <p className="note">
@@ -93,8 +93,8 @@ function Mine({ m, now, onUnlist, onGoCollection }) {
                   {rub(l.ask)}
                   <span className="lot-seller">рынок {rub(fair)}</span>
                 </span>
-                <button className="claim" onClick={() => onUnlist(l.id)}>
-                  Снять
+                <button className="claim" disabled={free <= 0} onClick={() => onUnlist(l.id)}>
+                  {free > 0 ? 'Снять' : 'Нет мест'}
                 </button>
               </div>
             );
@@ -233,6 +233,7 @@ export default function ExchangeScreen({
   onPart,
   filter,
   onFilter,
+  free,
   onOpenLot,
   onUnlist,
   onAccept,
@@ -252,7 +253,7 @@ export default function ExchangeScreen({
         ))}
       </div>
       {part === 'feed' && <Feed m={market} filter={filter} onFilter={onFilter} onOpenLot={onOpenLot} />}
-      {part === 'mine' && <Mine m={market} now={now} onUnlist={onUnlist} onGoCollection={onGoCollection} />}
+      {part === 'mine' && <Mine m={market} now={now} free={free} onUnlist={onUnlist} onGoCollection={onGoCollection} />}
       {part === 'offers' && <Offers m={market} now={now} onAccept={onAccept} onDecline={onDecline} />}
       {part === 'news' && <News m={market} now={now} />}
       {part === 'prices' && <Prices m={market} />}

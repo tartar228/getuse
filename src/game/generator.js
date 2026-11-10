@@ -158,6 +158,7 @@ const WORD_BUCKETS = [
   ['w1', 42],
   ['w2', 20],
   ['w3', 5],
+  ['biz', 6],
   ['name', 13],
   ['meme', 10],
   ['star', 5],
@@ -237,7 +238,7 @@ export function generateName(rng, p, pool) {
 
 let counter = 0;
 
-export function rollDrop(platformId, rng = Math.random) {
+function rollOnce(platformId, rng) {
   const p = PLATFORMS[platformId];
   const wanted = pickWeighted(rng, POOL_WEIGHTS);
   const { name, pool } = generateName(rng, p, wanted);
@@ -249,4 +250,18 @@ export function rollDrop(platformId, rng = Math.random) {
     ts: Date.now(),
     ...appraise(name, platformId),
   };
+}
+
+// Удача ×L: крутка делает floor(L) попыток, плюс ещё одну с шансом дробной части L,
+// и оставляет самую ценную. Без удачи (L = 1) это обычный один бросок.
+export function rollDrop(platformId, rng = Math.random, luck = 1) {
+  const base = Math.floor(luck);
+  const frac = luck - base;
+  const tries = Math.max(1, base) + (frac > 0 && rng() < frac ? 1 : 0);
+  let best = rollOnce(platformId, rng);
+  for (let i = 1; i < tries; i++) {
+    const d = rollOnce(platformId, rng);
+    if (d.v0 > best.v0) best = d;
+  }
+  return best;
 }
